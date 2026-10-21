@@ -225,16 +225,7 @@ def xmp(name, curves, hsl, basic, desc, group='Generated Looks', extra_attrs=Non
         ('HasSettings', 'True'),
         ('Copyright', desc[:80]),
     ]
-    if extra_attrs:
-        attrs.extend(extra_attrs.items() if isinstance(extra_attrs, dict) else extra_attrs)
-
-    for k, v in basic.items():
-        attrs.append((k, fmt_val(v)))
-    for k, v in sorted(hsl.items()):
-        if v != 0:
-            attrs.append((k, fmt_val(v)))
-
-    # Detail + effects (close to vivo_grok)
+    # Detail + effects (close to vivo_grok); basic/hsl/extra_attrs below override these
     attrs += [
         ('Sharpness', '32'),
         ('SharpenRadius', '0.9'),
@@ -256,6 +247,11 @@ def xmp(name, curves, hsl, basic, desc, group='Generated Looks', extra_attrs=Non
         ('GrainAmount', '3'),
         ('GrainSize', '25'),
     ]
+    attrs += [(k, fmt_val(v)) for k, v in basic.items()]
+    attrs += [(k, fmt_val(v)) for k, v in sorted(hsl.items()) if v != 0]
+    if extra_attrs:
+        attrs += list(extra_attrs.items() if isinstance(extra_attrs, dict) else extra_attrs)
+    attrs = dict(attrs).items()  # one value per attribute, later entries win (duplicates = invalid XMP)
 
     attr_lines = '\n'.join(f'    crs:{k}="{v}"' for k, v in attrs)
 

@@ -73,37 +73,72 @@ def analyse_character(imgs):
         if mid_mask.any():
             sats.append(s[mid_mask].mean())
     mean_sat = float(np.mean(sats)) if sats else 0.3
+    bs = [band_stats(im) for im in imgs]
+    bands = {b: float(np.median([x[b][0] for x in bs if b in x])) for b in BANDS
+             if sum(b in x for x in bs) >= 2}  # median saturation per HSL band
     return dict(lum=lum, q=q, shadow_lift=shadow_lift, highlight_rolloff=highlight_rolloff,
-                mid_bright=mid_bright, warmth=warmth, mean_sat=mean_sat,
+                mid_bright=mid_bright, warmth=warmth, mean_sat=mean_sat, bands=bands,
                 deep=deep, shad=shad, mid=mid, high=high, whit=whit, n=len(imgs))
 
 
-def absolute_basic_sliders(char, strength=1.0):
-    """Almost pure BASE; character only tiny nudges. Prevents dark samples → negative Exposure."""
+def character_offsets(char, ref, gain=0.5):
+    """How this folder differs from the average folder, as slider offsets on top of BASE.
+
+    Without this every --absolute preset is just BASE (the same file for every folder).
+    ponytail: linear gains are hand-picked (levels -> slider points); tune via --character.
+    """
+    g = gain
+    spread = (char['high'] - char['shad']) - (ref['high'] - ref['shad'])
+    basic = {
+        'Exposure2012': (char['mid_bright'] - ref['mid_bright']) / 128 * 1.5 * g,
+        'Shadows2012': (char['shad'] - ref['shad']) * 1.0 * g,
+        'Highlights2012': (char['high'] - ref['high']) * 1.0 * g,
+        'Contrast2012': spread * 0.5 * g,
+        'Vibrance': (char['mean_sat'] / ref['mean_sat'] - 1) * 100 * 0.5 * g,
+    }
+    hsl = {f'SaturationAdjustment{b}': (v / ref['bands'][b] - 1) * 100 * 0.5 * g
+           for b, v in char['bands'].items() if ref['bands'].get(b)}
+    dw = (char['warmth'] - ref['warmth']) * g  # R-B in mids, levels
+    extra = {'ColorGradeMidtoneHue': '40' if dw > 0 else '220',
+             'ColorGradeMidtoneSat': str(int(np.clip(abs(dw) * 0.6, 0, 20)))}
+    return basic, hsl, extra
+
+
+def mean_character(chars):
+    keys = ['mid_bright', 'shad', 'high', 'warmth', 'mean_sat']
+    ref: dict = {k: float(np.mean([c[k] for c in chars])) for k in keys}
+    ref['bands'] = {b: float(np.mean([c['bands'][b] for c in chars if b in c['bands']]))
+                    for b in BANDS if any(b in c['bands'] for c in chars)}
+    return ref
+
+
+def absolute_basic_sliders(char, strength=1.0, offsets=None):
+    """BASE plus this folder's offsets from the average folder (see character_offsets)."""
     s = strength
     # With few photos, trust BASE even more
     w = 0.12 if char['n'] < 6 else 0.22
+    off = dict(offsets or {})
 
-    def n(base, delta, lo, hi):
-        return float(np.clip((base + delta * w) * s, lo, hi))
+    def n(key, delta, lo, hi):
+        return float(np.clip((BASE[key] + delta * w) * s + off.get(key, 0), lo, hi))
 
     return {
-        'Exposure2012': round(n(BASE['Exposure2012'], char['mid_bright'] / 120.0, -0.15, 0.25), 2),
-        'Contrast2012': int(round(n(BASE['Contrast2012'], 0, 8, 22))),
-        'Highlights2012': int(round(n(BASE['Highlights2012'], -char['highlight_rolloff'] * 0.1, -45, -15))),
-        'Shadows2012': int(round(n(BASE['Shadows2012'], char['shadow_lift'] * 0.1, 20, 45))),
-        'Whites2012': int(round(n(BASE['Whites2012'], 0, 0, 16))),
-        'Blacks2012': int(round(n(BASE['Blacks2012'], 0, -16, 0))),
-        'Texture': int(round(n(BASE['Texture'], 0, 3, 12))),
-        'Clarity2012': int(round(n(BASE['Clarity2012'], 0, 3, 14))),
-        'Vibrance': int(round(n(BASE['Vibrance'], 0, 6, 16))),
+        'Exposure2012': round(n('Exposure2012', char['mid_bright'] / 120.0, -0.15, 0.25), 2),
+        'Contrast2012': int(round(n('Contrast2012', 0, 8, 22))),
+        'Highlights2012': int(round(n('Highlights2012', -char['highlight_rolloff'] * 0.1, -45, -15))),
+        'Shadows2012': int(round(n('Shadows2012', char['shadow_lift'] * 0.1, 20, 45))),
+        'Whites2012': int(round(n('Whites2012', 0, 0, 16))),
+        'Blacks2012': int(round(n('Blacks2012', 0, -16, 0))),
+        'Texture': int(round(n('Texture', 0, 3, 12))),
+        'Clarity2012': int(round(n('Clarity2012', 0, 3, 14))),
+        'Vibrance': int(round(n('Vibrance', 0, 6, 16))),
         'Saturation': int(round(BASE['Saturation'] * s)),
-        'Dehaze': int(round(n(BASE['Dehaze'], 0, 2, 8))),
+        'Dehaze': int(round(n('Dehaze', 0, 2, 8))),
     }
 
 
-def absolute_hsl(char, strength=1.0):
-    """Close to vivo_grok HSL."""
+def absolute_hsl(char, strength=1.0, offsets=None):
+    """Close to vivo_grok HSL, plus this folder's per-band offsets (see character_offsets)."""
     s = strength
     hsl = {
         'HueAdjustmentOrange': int(np.clip(-3 * s, -8, 8)),
@@ -120,7 +155,9 @@ def absolute_hsl(char, strength=1.0):
         'LuminanceAdjustmentYellow': int(np.clip(3 * s, -8, 8)),
         'LuminanceAdjustmentGreen': int(np.clip(5 * s, -10, 10)),
     }
-    return {k: int(np.clip(v, -HSL_LIMIT, HSL_LIMIT)) for k, v in hsl.items()}
+    for k, v in (offsets or {}).items():
+        hsl[k] = hsl.get(k, 0) + v
+    return {k: int(np.clip(round(v), -HSL_LIMIT, HSL_LIMIT)) for k, v in hsl.items()}
 
 
 def absolute_curves(char, strength=1.0):
@@ -145,15 +182,15 @@ def absolute_curves(char, strength=1.0):
     return [(p[0], min(255, ys[i])) for i, p in enumerate(pts)]
 
 
-def write_absolute_preset(name, imgs, strength, out_dir):
-    char = analyse_character(imgs)
-    basic = absolute_basic_sliders(char, strength)
-    hsl = absolute_hsl(char, strength)
+def write_absolute_preset(name, char, ref, strength, gain, out_dir):
+    off_basic, off_hsl, extra = character_offsets(char, ref, gain)
+    basic = absolute_basic_sliders(char, strength, off_basic)
+    hsl = absolute_hsl(char, strength, off_hsl)
     curves = absolute_curves(char, strength)  # single luminance curve
-    desc = f'Absolute vivo_grok-biased look from {len(imgs)} photos'
+    desc = f'Absolute vivo_grok-biased look from {char["n"]} photos'
     path = os.path.join(out_dir, name.replace(' ', '_') + '.xmp')
     with open(path, 'w', encoding='utf-8') as f:
-        f.write(xmp(name, curves, hsl, basic, desc, group='Absolute Looks'))
+        f.write(xmp(name, curves, hsl, basic, desc, group='Absolute Looks', extra_attrs=extra))
     print('wrote', path)
     print('  Basic:', {k: v for k, v in basic.items() if v != 0 and v != 0.0})
     print('  HSL:', {k: v for k, v in hsl.items() if v})
@@ -263,19 +300,17 @@ def run_relative(pix, feats, strength, out, groups, min_photos, by_light):
 
 
 def main(src, out, exclude=(), groups=True, min_photos=3, strength=1.0,
-         absolute=False, by_light=False):
+         absolute=False, by_light=False, character=0.5):
     os.makedirs(out, exist_ok=True)
     pix = scan(src, set(exclude), min_photos)
     print('Folders:', ', '.join(f'{d} ({len(v)})' for d, v in pix.items()))
 
     if absolute:
-        print('Mode: ABSOLUTE (vivo_grok-biased, strong base)')
-        for d, imgs in pix.items():
-            kept = list(imgs.values())
-            if len(kept) < min_photos:
-                print(f'  {d}: too few photos, skip')
-                continue
-            write_absolute_preset(pretty(d), kept, strength, out)
+        print('Mode: ABSOLUTE (vivo_grok-biased base + per-folder character)')
+        chars = {d: analyse_character(list(imgs.values())) for d, imgs in pix.items()}
+        ref = mean_character(list(chars.values()))  # one folder -> offsets 0 -> plain BASE
+        for d, char in chars.items():
+            write_absolute_preset(pretty(d), char, ref, strength, character, out)
         return
 
     if len(pix) < 2:
@@ -299,6 +334,21 @@ def selftest():
     assert basic['Exposure2012'] > -0.2  # must not go strongly negative
     curves = absolute_curves(char, 1.0)
     assert curves[0] == (0, 12) or curves[0][1] >= 6
+
+    # different folders must give different presets (regression: every file was ~BASE)
+    dark = analyse_character([rng.uniform(5, 120, (3000, 3)) * [1.0, 0.95, 0.9] for _ in range(4)])
+    bright = analyse_character([rng.uniform(60, 250, (3000, 3)) * [0.9, 0.95, 1.0] for _ in range(4)])
+    ref = mean_character([dark, bright])
+    out = {}
+    for name, c in (('dark', dark), ('bright', bright)):
+        ob, oh, ex = character_offsets(c, ref, 1.0)
+        out[name] = (absolute_basic_sliders(c, 1.0, ob), absolute_hsl(c, 1.0, oh), ex)
+    assert out['bright'][0]['Exposure2012'] > out['dark'][0]['Exposure2012'], out
+    assert out['dark'][2]['ColorGradeMidtoneHue'] == '40' and out['bright'][2]['ColorGradeMidtoneHue'] == '220'
+    ob, oh, _ = character_offsets(dark, mean_character([dark]))
+    assert not any(ob.values()) and not any(oh.values())  # single folder -> plain BASE
+    x = xmp('t', curves, {}, {}, 't', extra_attrs={'ColorGradeMidtoneSat': '9'})
+    assert x.count('ColorGradeMidtoneSat') == 1 and 'ColorGradeMidtoneSat="9"' in x
     print('selftest ok')
 
 
@@ -318,7 +368,10 @@ if __name__ == '__main__':
                     help='One character-based preset per folder (recommended)')
     ap.add_argument('--by-light', action='store_true',
                     help='Also generate Bright/Low Light relative variants')
+    ap.add_argument('--character', type=float, default=0.5,
+                    help='--absolute: how strongly each folder differs from the others '
+                         '(0 = same BASE preset for all, default 0.5)')
     ap.add_argument('--selftest', action='store_true')
     a = ap.parse_args()
     main(a.samples_dir, a.out_dir, a.exclude, not a.no_groups,
-         a.min_photos, a.strength, a.absolute, a.by_light)
+         a.min_photos, a.strength, a.absolute, a.by_light, a.character)

@@ -88,7 +88,7 @@ python3 folder_presets.py SAMPLES_DIR OUT_DIR [options]
 
 | Mode | Flag | What you get |
 |------|------|----------------|
-| **Absolute** (recommended) | `--absolute` | One character-based preset per folder. Does **not** compare to other phones. Best for “give me the Vivo look”. |
+| **Absolute** (recommended) | `--absolute` | One character-based preset per folder: a shared photographic base plus how this folder differs from the other folders. Best for “give me the Vivo look”. |
 | **Relative** (default without `--absolute`) | — | One preset per folder vs the **average of all folders**. Useful to compare phones. |
 | **By light** (optional) | `--by-light` | Also generates Bright Light / Low Light relative variants. Off by default. |
 
@@ -101,6 +101,7 @@ python3 folder_presets.py SAMPLES_DIR OUT_DIR [options]
 | `--no-groups` | Skip combined presets for name prefixes (`vivo_300` + `vivo_500` → `Vivo`) |
 | `--min-photos N` | Minimum photos per folder (default 3) |
 | `-s, --strength` | Scale adjustments (default `1.0`) |
+| `--character G` | `--absolute`: how strongly each folder differs from the others (`0` = identical BASE preset for every folder, default `0.5`, `1.0` = strong, often hits slider limits) |
 | `--exclude NAME ...` | Ignore folders or filenames |
 | `--selftest` | Run checks and exit |
 
@@ -125,10 +126,14 @@ python3 folder_presets.py ./samples ./presets --absolute -s 0.9 \
 
 1. Measures character of the folder (shadow lift, highlight rolloff, warmth, saturation, mid brightness).
 2. Starts from a photographic base (stronger shadows, controlled highlights, mild clarity/vibrance — similar to hand-tuned phone presets).
-3. Nudges that base using the measured character.
+3. Adds this folder's difference from the **average of all folders** (`--character` scales it):
+   brightness → Exposure, shadow / highlight levels → Shadows / Highlights, tonal spread → Contrast,
+   saturation → Vibrance and per-band HSL saturation, warmth → Color Grading midtone (warm 40° / cool 220°).
+   With a single folder there is nothing to compare, so you get the plain base.
 4. Adds soft HSL, a gentle S-curve, light split toning, vignette and grain.
 
 It does **not** compare to a linear “neutral” (that used to reverse JPEG processing and looked bad).
+Because the differences are measured against the other folders, adding or removing a folder changes the presets.
 
 ### How relative mode works
 
