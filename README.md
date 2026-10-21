@@ -1,144 +1,175 @@
 # preset_tool
 
-Generate Lightroom presets (`.xmp`) from pictures you provide.
+Generate Lightroom presets (`.xmp`) from sample photos.
 
 Two scripts:
 
-- `make_preset.py` - make **your** photos look like a set of style photos.
-- `folder_presets.py` - derive presets for every sub-folder of a samples directory
-  (one folder = one phone, camera, film stock, ...), compared against each other.
+- **`make_preset.py`** — make *your* photos look like a set of style photos (style → reference).
+- **`folder_presets.py`** — one preset per sub-folder of a samples directory (one folder = one phone / camera / film look).
 
-Presets work in Lightroom Classic, Lightroom (cloud) and Adobe Camera Raw, for raw files and JPEGs.
+Presets work in **Lightroom Classic**, **Lightroom (cloud)** and **Adobe Camera Raw**, on RAW and JPEG.
+
+---
 
 ## Requirements
 
-Python 3, `numpy`, `Pillow`:
+Python 3 + `numpy` + `Pillow`:
 
 ```bash
 pip install --user numpy pillow
 ```
 
+---
+
+## Quick start (recommended)
+
+Put sample JPEGs into folders (one look per folder), then:
+
+```bash
+# One solid preset per folder (character-based, vivo_grok-style bias)
+python3 folder_presets.py ./samples ./presets --absolute -s 0.9
+```
+
+Import the `.xmp` files in Lightroom: **Develop → Presets → + → Import Presets**.
+
+Use the **Amount** slider to soften the effect if needed.
+
+---
+
 ## make_preset.py
+
+Build a single preset that pushes reference photos toward a style set.
 
 ```bash
 python3 make_preset.py STYLE_DIR REFERENCE_DIR -n "My Look" [-o out.xmp] [-s STRENGTH] [--preview]
 ```
 
-
 | Argument | Meaning |
-|---|---|
-| `STYLE_DIR` | photos with the look you want (min. 3) |
-| `REFERENCE_DIR` | photos from the camera you'll apply the preset to (min. 3) |
-| `-n, --name` | preset name shown in Lightroom |
-| `-o, --out` | output file (default: `<name>.xmp`) |
-| `-s, --strength` | scale all adjustments, e.g. `0.7` softer, `1.3` stronger (default `1.0`) |
-| `--preview` | save a before/after JPG next to the preset (tone curves only) |
-| `--selftest` | run the built-in check and exit |
+|----------|---------|
+| `STYLE_DIR` | Photos with the look you want (min. 3) |
+| `REFERENCE_DIR` | Photos from the camera you’ll apply the preset to (min. 3) |
+| `-n, --name` | Preset name in Lightroom |
+| `-o, --out` | Output file (default: `<name>.xmp`) |
+| `-s, --strength` | Scale all adjustments (`0.7` softer, `1.2` stronger; default `1.0`) |
+| `--preview` | Save a before/after JPG (tone curves only) |
+| `--selftest` | Run built-in checks and exit |
 
 Examples:
 
 ```bash
-# Make your Pixel photos look like vivo X300 Pro shots
-python3 make_preset.py ~/photos/vivo_x300 ~/photos/my_pixel -n "Vivo X300 Look"
+# Make your Pixel photos look like Vivo shots
+python3 make_preset.py ~/photos/vivo_samples ~/photos/my_pixel -n "Vivo Look" -s 0.9
 
-# Softer (70%), custom output file, plus a before/after JPG
-python3 make_preset.py ~/photos/vivo_x300 ~/photos/my_pixel -n "Vivo X300 Soft" \
-    -s 0.7 -o ~/presets/vivo_x300_soft.xmp --preview
-
-# Check the maths still works
-python3 make_preset.py --selftest
-
-# Make absolute preset
-python3 ./folder_presets.py --absolute ~/Downloads/photo_samples examples --exclude presets 262830-329.jpg HUOVrgla4AAowpt.jpg
-
-# Another example
-python3 ./folder_presets.py  ~/Downloads/photo_samples examples --exclude presets 262830-329.jpg HUOVrgla4AAowpt.jpg
+# Softer + preview
+python3 make_preset.py ~/photos/vivo_samples ~/photos/my_pixel -n "Vivo Soft" \
+    -s 0.7 -o ~/presets/vivo_soft.xmp --preview
 ```
 
-**Tip:** the closer the scenes in both folders, the better. Same scenes are ideal,
-similar light and subjects are fine. Very different scenes (e.g. flowers vs. night
-city) get mistaken for "style".
+**Tip:** Similar scenes in both folders work best. Very different content (flowers vs night city) is often mistaken for “style”.
 
-How it works: per-channel quantile matching gives R/G/B tone curves; the remaining
-saturation / hue / luminance gap per Lightroom HSL band is measured after those curves
-and written as HSL sliders. White/black watermark frames (e.g. Leica borders) are
-cropped before measuring.
+What it writes:
+
+- Basic tone (Exposure, Contrast, Highlights, Shadows, Whites, Blacks, Texture, Clarity, Vibrance, Dehaze) with a photographic base inspired by hand-tuned phone looks
+- Soft HSL (±12)
+- RGB tone curves
+- Mild split toning, vignette and grain
+
+---
 
 ## folder_presets.py
 
+Generate presets for every sub-folder under a samples directory.
+
 ```bash
-python3 folder_presets.py SAMPLES_DIR OUT_DIR [--exclude NAME ...] [--no-groups] [--min-photos N]
+python3 folder_presets.py SAMPLES_DIR OUT_DIR [options]
 ```
+
+### Modes
+
+| Mode | Flag | What you get |
+|------|------|----------------|
+| **Absolute** (recommended) | `--absolute` | One character-based preset per folder. Does **not** compare to other phones. Best for “give me the Vivo look”. |
+| **Relative** (default without `--absolute`) | — | One preset per folder vs the **average of all folders**. Useful to compare phones. |
+| **By light** (optional) | `--by-light` | Also generates Bright Light / Low Light relative variants. Off by default. |
+
+### Options
 
 | Argument | Meaning |
-|---|---|
-| `SAMPLES_DIR` | directory whose sub-folders each hold one look (min. 2 folders) |
-| `OUT_DIR` | where to write the `.xmp` presets |
-| `--exclude` | file or folder names to ignore (e.g. wrong-camera shots, an output folder) |
-| `--no-groups` | skip the combined preset per name prefix |
-| `--min-photos` | photos needed per folder and light (default 3) |
-| `--selftest` | run the built-in check and exit |
-
-Nothing is hardcoded - any folder names work:
-
-```
-samples/
-  vivo_300_pro/     -> "Vivo 300 Pro - Bright Light", "Vivo 300 Pro - Low Light"
-  vivo_500_pro/     -> "Vivo 500 Pro - Bright Light", "Vivo 500 Pro - Low Light"
-  xiaomi_17/        -> "Xiaomi 17 - ..."
-  xiaomi_18/        -> "Xiaomi 18 - ..."
-                    -> "Vivo Look", "Xiaomi Look"   (groups by prefix)
-```
+|----------|---------|
+| `--absolute` | Character-based absolute look per folder (**recommended**) |
+| `--by-light` | Also create Bright / Low Light relative presets |
+| `--no-groups` | Skip combined presets for name prefixes (`vivo_300` + `vivo_500` → `Vivo`) |
+| `--min-photos N` | Minimum photos per folder (default 3) |
+| `-s, --strength` | Scale adjustments (default `1.0`) |
+| `--exclude NAME ...` | Ignore folders or filenames |
+| `--selftest` | Run checks and exit |
 
 Examples:
 
 ```bash
-# Presets for every folder in ~/samples
-python3 folder_presets.py ~/samples ~/presets
+# Recommended: one good preset per phone
+python3 folder_presets.py ./samples ./presets --absolute -s 0.9
 
-# Ignore some files/folders (wrong camera, output dir)
-python3 folder_presets.py ~/Downloads/photo_samples ./examples \
-    --exclude presets oppo_find_x9_pro 262830-329.jpg HUOVrgla4AAowpt.jpg
+# Relative comparison between phones (no light split)
+python3 folder_presets.py ./samples ./presets -s 0.9
 
-# Film stocks, no group presets, require more photos per preset
-python3 folder_presets.py ~/film_scans ~/presets --no-groups --min-photos 5
+# Relative + optional Bright/Low Light variants
+python3 folder_presets.py ./samples ./presets -s 0.9 --by-light
+
+# Exclude junk
+python3 folder_presets.py ./samples ./presets --absolute -s 0.9 \
+    --exclude presets trash.jpg
 ```
 
-How it works:
+### How absolute mode works
 
-- **2 presets per folder.** Photos are split into bright and dim scenes by median
-  luminance (split at the median of all photos). Each preset = that folder's median
-  render in that light vs. the average of all folders in the same light, so bright
-  scenes are compared with bright scenes. A light with fewer than `--min-photos`
-  photos in a folder gets no preset (the script says so).
-- **1 preset per group.** Folders sharing the name prefix before the first `_` or
-  `-` (`vivo_300_pro` + `vivo_500_pro` -> `Vivo`) get a combined look from all
-  their photos. Single-folder prefixes get no group preset.
-- **Outliers ignored.** Photos far from their folder's typical render are skipped
-  and listed in the output.
-- The script prints a summary per preset (shadows / mids / highlights / warmth /
-  saturation vs. the average folder).
+1. Measures character of the folder (shadow lift, highlight rolloff, warmth, saturation, mid brightness).
+2. Starts from a photographic base (stronger shadows, controlled highlights, mild clarity/vibrance — similar to hand-tuned phone presets).
+3. Nudges that base using the measured character.
+4. Adds soft HSL, a gentle S-curve, light split toning, vignette and grain.
 
-Notes from the vivo / Xiaomi sample set: the brand split (Vivo ~20 levels brighter
-in mids/highlights than Xiaomi) holds under resampling. The difference between
-phones of the same brand does not: on same-scene pairs, X300-vs-X500 and 17-vs-18
-predicted the held-out phone no better than chance (vivo 10/19 scenes, xiaomi 3/6).
-Per-folder presets are each folder's own average render, so they're usable, but
-treat small differences between similar folders as noise.
+It does **not** compare to a linear “neutral” (that used to reverse JPEG processing and looked bad).
+
+### How relative mode works
+
+1. Builds a median profile per folder (outliers dropped).
+2. Compares each folder to the average of all folders.
+3. Writes basic tone (blended with the same photographic base), soft HSL and RGB curves.
+4. Optionally (`--by-light`) splits scenes by median luminance into Bright / Low Light.
+
+---
 
 ## Installing presets in Lightroom
 
-Lightroom Classic: **Develop -> Presets panel -> `+` -> Import Presets**, pick the `.xmp`.
-Generated presets support the **Amount** slider, so you can dial them down.
+**Lightroom Classic:** Develop → Presets panel → `+` → Import Presets → select the `.xmp` files.
+
+Generated presets support the **Amount** slider — lower it if the look is too strong.
+
+---
+
+## Tips for better results
+
+1. **Prefer `--absolute`** when you want “the look of this phone”.
+2. **8–15 similar, good photos** per folder beat 40 mixed scenes.
+3. Avoid mixing night city, green forests and studio portraits in one folder if you can.
+4. Start with `-s 0.85`–`0.95`; raise only if the look feels too weak.
+5. Bright / Low Light split is optional — for most phone JPEG looks one preset is enough.
+
+---
 
 ## Limitations
 
-- HSL slider scales are estimates, not calibrated against Lightroom; if colours
-  look too strong, lower Amount or rerun with `-s 0.7`.
-- `--preview` and the internal previews approximate the result; they are not a
-  Lightroom render.
-- Only global tone/colour is reproduced, not phone-specific local processing
-  (local HDR, skin smoothing, sharpening).
-- `folder_presets.py` has no neutral reference, so presets are relative to the
-  average of the sampled folders (adding/removing a folder changes all presets),
-  and different scene mixes between folders can bias them.
+- Automatic presets will rarely match a carefully hand-tuned preset on a curated set of images.
+- HSL scales are approximate; use Amount or `-s` if colours feel strong.
+- Only global tone/colour is modelled — not local HDR, skin smoothing or phone-specific sharpening.
+- Relative presets change if you add/remove folders (they are relative to the average).
+- `--preview` approximates curves only; it is not a full Lightroom render.
+
+---
+
+## Self-tests
+
+```bash
+python3 make_preset.py --selftest
+python3 folder_presets.py --selftest
+```

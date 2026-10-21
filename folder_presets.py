@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """Derive Lightroom presets for every sub-folder of a samples directory.
 
-Biased toward hand-crafted phone looks (vivo_grok style):
-- Strong shadow lift, controlled highlights
-- Mild clarity/texture, pleasant vibrance
-- Soft HSL, mild split toning + vignette
+Absolute mode is strongly biased toward hand-crafted phone looks (vivo_grok):
+- Base: Shadows +35, Highlights -30, Contrast +12, Vibrance +10, etc.
+- Single luminance curve with shadow lift (not crushing RGB curves)
+- Soft HSL + sharpening + NR + split toning + vignette
+- Measured character only gently nudges the base (small samples won't drag Exposure negative)
 
 Usage:
-  python3 folder_presets.py SAMPLES_DIR OUT_DIR --absolute -s 0.9
+  python3 folder_presets.py SAMPLES_DIR OUT_DIR --absolute -s 0.95
   python3 folder_presets.py SAMPLES_DIR OUT_DIR -s 0.9
+  python3 folder_presets.py SAMPLES_DIR OUT_DIR -s 0.9 --by-light
 """
 import argparse, os, re, sys
 import warnings
@@ -59,7 +61,9 @@ def analyse_character(imgs):
     deep, shad, mid, high, whit = lum[1], lum[2], lum[5], lum[8], lum[9]
     shadow_lift = max(0, 40 - shad)
     highlight_rolloff = max(0, high - 200)
-    mid_bright = mid - 128
+    # Use median of per-image mids so one dark night shot doesn't dominate
+    per_mid = [np.percentile(im, 50, axis=0).mean() for im in imgs]
+    mid_bright = float(np.median(per_mid) - 128)
     warmth = float(q[5, 0] - q[5, 2])
     sats = []
     for im in imgs:
@@ -71,76 +75,81 @@ def analyse_character(imgs):
     mean_sat = float(np.mean(sats)) if sats else 0.3
     return dict(lum=lum, q=q, shadow_lift=shadow_lift, highlight_rolloff=highlight_rolloff,
                 mid_bright=mid_bright, warmth=warmth, mean_sat=mean_sat,
-                deep=deep, shad=shad, mid=mid, high=high, whit=whit)
+                deep=deep, shad=shad, mid=mid, high=high, whit=whit, n=len(imgs))
 
 
 def absolute_basic_sliders(char, strength=1.0):
-    """Start from vivo_grok BASE, nudge by measured character."""
+    """Almost pure BASE; character only tiny nudges. Prevents dark samples → negative Exposure."""
     s = strength
-    def n(base, delta, lo, hi):
-        return float(np.clip((base + delta) * s, lo, hi))
+    # With few photos, trust BASE even more
+    w = 0.12 if char['n'] < 6 else 0.22
 
-    shadows = n(BASE['Shadows2012'], char['shadow_lift'] * 0.2, 15, 48)
-    highlights = n(BASE['Highlights2012'], -char['highlight_rolloff'] * 0.15, -48, -10)
-    contrast = n(BASE['Contrast2012'], (char['high'] - char['shad'] - 150) * 0.05, 6, 24)
-    exposure = n(BASE['Exposure2012'], char['mid_bright'] / 100.0, -0.3, 0.3)
-    whites = n(BASE['Whites2012'], (char['whit'] - 230) * 0.1, -15, 20)
-    blacks = n(BASE['Blacks2012'], (30 - char['deep']) * 0.08, -20, 10)
-    clarity = n(BASE['Clarity2012'], 0, 3, 16)
-    texture = n(BASE['Texture'], 0, 2, 14)
-    vibrance = n(BASE['Vibrance'], (0.35 - char['mean_sat']) * 8, 4, 18)
-    dehaze = n(BASE['Dehaze'], 0, 0, 8)
+    def n(base, delta, lo, hi):
+        return float(np.clip((base + delta * w) * s, lo, hi))
 
     return {
-        'Exposure2012': round(exposure, 2),
-        'Contrast2012': int(round(contrast)),
-        'Highlights2012': int(round(highlights)),
-        'Shadows2012': int(round(shadows)),
-        'Whites2012': int(round(whites)),
-        'Blacks2012': int(round(blacks)),
-        'Texture': int(round(texture)),
-        'Clarity2012': int(round(clarity)),
-        'Vibrance': int(round(vibrance)),
+        'Exposure2012': round(n(BASE['Exposure2012'], char['mid_bright'] / 120.0, -0.15, 0.25), 2),
+        'Contrast2012': int(round(n(BASE['Contrast2012'], 0, 8, 22))),
+        'Highlights2012': int(round(n(BASE['Highlights2012'], -char['highlight_rolloff'] * 0.1, -45, -15))),
+        'Shadows2012': int(round(n(BASE['Shadows2012'], char['shadow_lift'] * 0.1, 20, 45))),
+        'Whites2012': int(round(n(BASE['Whites2012'], 0, 0, 16))),
+        'Blacks2012': int(round(n(BASE['Blacks2012'], 0, -16, 0))),
+        'Texture': int(round(n(BASE['Texture'], 0, 3, 12))),
+        'Clarity2012': int(round(n(BASE['Clarity2012'], 0, 3, 14))),
+        'Vibrance': int(round(n(BASE['Vibrance'], 0, 6, 16))),
         'Saturation': int(round(BASE['Saturation'] * s)),
-        'Dehaze': int(round(dehaze)),
+        'Dehaze': int(round(n(BASE['Dehaze'], 0, 2, 8))),
     }
 
 
 def absolute_hsl(char, strength=1.0):
+    """Close to vivo_grok HSL."""
     s = strength
     hsl = {
-        'SaturationAdjustmentGreen': int(np.clip(6 * s, -10, 12)),
-        'LuminanceAdjustmentGreen': int(np.clip(3 * s, -8, 8)),
-        'SaturationAdjustmentOrange': int(np.clip(5 * s, -10, 12)),
-        'SaturationAdjustmentYellow': int(np.clip(3 * s, -8, 10)),
-        'LuminanceAdjustmentOrange': int(np.clip(3 * s, -8, 8)),
-        'HueAdjustmentOrange': int(np.clip(-2 * s, -6, 6)),
-        'HueAdjustmentYellow': int(np.clip(-2 * s, -6, 6)),
-        'HueAdjustmentAqua': int(np.clip(2 * s, -6, 6)),
+        'HueAdjustmentOrange': int(np.clip(-3 * s, -8, 8)),
+        'HueAdjustmentYellow': int(np.clip(-4 * s, -8, 8)),
+        'HueAdjustmentGreen': int(np.clip(2 * s, -6, 6)),
+        'HueAdjustmentAqua': int(np.clip(3 * s, -6, 6)),
+        'SaturationAdjustmentOrange': int(np.clip(8 * s, -12, 12)),
+        'SaturationAdjustmentYellow': int(np.clip(5 * s, -10, 12)),
+        'SaturationAdjustmentGreen': int(np.clip(8 * s, -12, 12)),
+        'SaturationAdjustmentAqua': int(np.clip(4 * s, -10, 10)),
+        'SaturationAdjustmentBlue': int(np.clip(3 * s, -8, 8)),
+        'SaturationAdjustmentRed': int(np.clip(4 * s, -8, 10)),
+        'LuminanceAdjustmentOrange': int(np.clip(5 * s, -10, 10)),
+        'LuminanceAdjustmentYellow': int(np.clip(3 * s, -8, 8)),
+        'LuminanceAdjustmentGreen': int(np.clip(5 * s, -10, 10)),
     }
-    if char['warmth'] > 8:
-        hsl['HueAdjustmentBlue'] = int(np.clip(3 * s, -8, 8))
     return {k: int(np.clip(v, -HSL_LIMIT, HSL_LIMIT)) for k, v in hsl.items()}
 
 
 def absolute_curves(char, strength=1.0):
+    """Single luminance curve with shadow lift — matches vivo_grok style.
+    Returns list of (x,y) points (not per-channel RGB).
+    """
     s = strength
-    shadow_y = int(np.clip(10 + char['shadow_lift'] * 0.12, 6, 20) * s)
-    mid_y = 128 + int(np.clip(char['mid_bright'] * 0.12, -6, 6) * s)
-    pts = [(0, 0), (32, 18 + shadow_y), (64, 52 + shadow_y // 2),
-           (128, mid_y), (192, 210), (255, 255)]
+    # vivo_grok: (0,12), (40,38), (95,95), (170,172), (230,232), (255,255)
+    y0 = int(np.clip(12 * s, 6, 18))
+    pts = [
+        (0, y0),
+        (40, int(38 * s + (1 - s) * 40)),
+        (95, 95),
+        (170, 172),
+        (230, 232),
+        (255, 255),
+    ]
+    # monotonic
     ys = [p[1] for p in pts]
     for i in range(1, len(ys)):
-        ys[i] = max(ys[i], ys[i-1] + 1)
-    pts = [(p[0], min(255, ys[i])) for i, p in enumerate(pts)]
-    return [pts, pts, pts]
+        ys[i] = max(ys[i], ys[i - 1] + 1)
+    return [(p[0], min(255, ys[i])) for i, p in enumerate(pts)]
 
 
 def write_absolute_preset(name, imgs, strength, out_dir):
     char = analyse_character(imgs)
     basic = absolute_basic_sliders(char, strength)
     hsl = absolute_hsl(char, strength)
-    curves = absolute_curves(char, strength)
+    curves = absolute_curves(char, strength)  # single luminance curve
     desc = f'Absolute vivo_grok-biased look from {len(imgs)} photos'
     path = os.path.join(out_dir, name.replace(' ', '_') + '.xmp')
     with open(path, 'w', encoding='utf-8') as f:
@@ -148,6 +157,7 @@ def write_absolute_preset(name, imgs, strength, out_dir):
     print('wrote', path)
     print('  Basic:', {k: v for k, v in basic.items() if v != 0 and v != 0.0})
     print('  HSL:', {k: v for k, v in hsl.items() if v})
+    print(f'  Character: n={char["n"]}, mid_bright={char["mid_bright"]:+.1f}, warmth={char["warmth"]:+.1f}')
     return path
 
 
@@ -184,21 +194,17 @@ def compute_hsl_relative(sample_px, curves, strength):
         if len(s) < 2 or len(r) < 2:
             continue
         (s_sat, s_hue, s_lum), (r_sat, r_hue, r_lum) = np.mean(s, 0), np.mean(r, 0)
-        sat = (s_sat / max(r_sat, 1e-6) - 1) * 35
-        hue = (s_hue - r_hue) * 1.1
-        lum = (s_lum - r_lum) * 60
-        out[f'SaturationAdjustment{b}'] = sat
-        out[f'HueAdjustment{b}'] = hue
-        out[f'LuminanceAdjustment{b}'] = lum
-    # mild green/orange bias
-    out['SaturationAdjustmentGreen'] = out.get('SaturationAdjustmentGreen', 0) + 4 * strength
-    out['SaturationAdjustmentOrange'] = out.get('SaturationAdjustmentOrange', 0) + 3 * strength
+        out[f'SaturationAdjustment{b}'] = (s_sat / max(r_sat, 1e-6) - 1) * 30
+        out[f'HueAdjustment{b}'] = (s_hue - r_hue) * 1.0
+        out[f'LuminanceAdjustment{b}'] = (s_lum - r_lum) * 50
+    for k, v in [('SaturationAdjustmentGreen', 5), ('SaturationAdjustmentOrange', 4)]:
+        out[k] = out.get(k, 0) + v * strength
     return {k: int(np.clip(round(v * strength), -HSL_LIMIT, HSL_LIMIT)) for k, v in out.items()}
 
 
 def write_relative_preset(name, style_q, ref_q, sample_px, strength, out_dir, group, desc):
     curves = channel_curves(style_q, ref_q, strength)
-    basic = estimate_basic_sliders(style_q, ref_q, strength)  # already vivo_grok-biased
+    basic = estimate_basic_sliders(style_q, ref_q, strength)
     hsl = compute_hsl_relative(sample_px, curves, strength)
     path = os.path.join(out_dir, name.replace(' ', '_') + '.xmp')
     with open(path, 'w', encoding='utf-8') as f:
@@ -209,13 +215,61 @@ def write_relative_preset(name, style_q, ref_q, sample_px, strength, out_dir, gr
     return path
 
 
-def main(src, out, exclude=(), groups=True, min_photos=3, strength=1.0, absolute=False):
+def run_relative(pix, feats, strength, out, groups, min_photos, by_light):
+    def profile(d, names, label):
+        print(f'  {label}: {len(names)} photos')
+        return np.nanmedian(robust_keep(np.array([feats[d][k] for k in names]), names, label), 0)
+
+    jobs = []
+    prof_all = {d: profile(d, list(feats[d]), f'{d} / all') for d in feats}
+    base_all = np.nanmean(list(prof_all.values()), 0)
+    for d, p in prof_all.items():
+        sample = list(pix[d].values())[::max(1, len(pix[d]) // 8)]
+        jobs.append((pretty(d), p, base_all, sample, 'Folder Looks',
+                     'Relative vs average of folders'))
+
+    if by_light:
+        def mid(f):
+            return f[:33].reshape(11, 3)[5].mean()
+        split = np.median([mid(f) for fs in feats.values() for f in fs.values()])
+        light = {d: {k: LIGHTS[int(mid(f) < split)] for k, f in fs.items()} for d, fs in feats.items()}
+        print(f'  (optional) Bright/Low split at {split:.0f}/255')
+        for lt in LIGHTS:
+            names = {d: [k for k in feats[d] if light[d][k] == lt] for d in feats}
+            prof = {d: profile(d, n, f'{d} / {lt}') for d, n in names.items() if len(n) >= min_photos}
+            if len(prof) < 2:
+                continue
+            base = np.nanmean(list(prof.values()), 0)
+            for d, p in prof.items():
+                sample = [pix[d][k] for k in names[d]][::2]
+                jobs.append((f'{pretty(d)} - {lt}', p, base, sample, 'Folder Looks',
+                             f'Relative {lt}'))
+
+    if groups:
+        grouped = {}
+        for d in feats:
+            grouped.setdefault(group_of(d), []).append(d)
+        grouped = {g: ds for g, ds in grouped.items() if len(ds) > 1}
+        for g, ds in grouped.items():
+            sample = [px for d in ds for px in list(pix[d].values())[::4]]
+            target = np.mean([prof_all[d] for d in ds], 0)
+            jobs.append((f'{pretty(g)} Look', target, base_all, sample, 'Folder Looks',
+                         'Group relative'))
+
+    print()
+    for name, t, b, sample, group, desc in jobs:
+        write_relative_preset(name, t[:33].reshape(11, 3), b[:33].reshape(11, 3),
+                              sample, strength, out, group, desc)
+
+
+def main(src, out, exclude=(), groups=True, min_photos=3, strength=1.0,
+         absolute=False, by_light=False):
     os.makedirs(out, exist_ok=True)
     pix = scan(src, set(exclude), min_photos)
     print('Folders:', ', '.join(f'{d} ({len(v)})' for d, v in pix.items()))
-    print('Mode:', 'ABSOLUTE (vivo_grok-biased)' if absolute else 'RELATIVE (vivo_grok-biased)')
 
     if absolute:
+        print('Mode: ABSOLUTE (vivo_grok-biased, strong base)')
         for d, imgs in pix.items():
             kept = list(imgs.values())
             if len(kept) < min_photos:
@@ -227,59 +281,24 @@ def main(src, out, exclude=(), groups=True, min_photos=3, strength=1.0, absolute
     if len(pix) < 2:
         sys.exit('Relative mode needs at least 2 folders. Use --absolute for single-folder sets.')
 
+    print('Mode: RELATIVE' + (' + by-light' if by_light else ''))
     feats = {d: {k: features(v) for k, v in imgs.items()} for d, imgs in pix.items()}
-
-    def mid(f): return f[:33].reshape(11, 3)[5].mean()
-    split = np.median([mid(f) for fs in feats.values() for f in fs.values()])
-    light = {d: {k: LIGHTS[int(mid(f) < split)] for k, f in fs.items()} for d, fs in feats.items()}
-    print(f'Bright/low light split at median luminance {split:.0f}/255')
-
-    def profile(d, names, label):
-        print(f'  {label}: {len(names)} photos')
-        return np.nanmedian(robust_keep(np.array([feats[d][k] for k in names]), names, label), 0)
-
-    jobs = []
-    for lt in LIGHTS:
-        names = {d: [k for k in feats[d] if light[d][k] == lt] for d in feats}
-        prof = {d: profile(d, n, f'{d} / {lt}') for d, n in names.items() if len(n) >= min_photos}
-        for d in sorted(set(feats) - set(prof)):
-            print(f'  {d} / {lt}: only {len(names[d])} photos, no preset')
-        if len(prof) < 2:
-            continue
-        base = np.nanmean(list(prof.values()), 0)
-        for d, p in prof.items():
-            sample = [pix[d][k] for k in names[d]][::2]
-            jobs.append((f'{pretty(d)} - {lt}', p, base, sample))
-
-    if groups:
-        grouped = {}
-        for d in feats:
-            grouped.setdefault(group_of(d), []).append(d)
-        grouped = {g: ds for g, ds in grouped.items() if len(ds) > 1}
-        if grouped:
-            prof = {d: profile(d, list(feats[d]), f'{d} / all') for d in feats}
-            base = np.nanmean(list(prof.values()), 0)
-            for g, ds in grouped.items():
-                sample = [px for d in ds for px in list(pix[d].values())[::4]]
-                target = np.mean([prof[d] for d in ds], 0)
-                jobs.append((f'{pretty(g)} Look', target, base, sample))
-
-    print()
-    for name, t, b, sample in jobs:
-        style_q = t[:33].reshape(11, 3)
-        ref_q = b[:33].reshape(11, 3)
-        write_relative_preset(name, style_q, ref_q, sample, strength, out,
-                              group='Folder Looks', desc='Relative vivo_grok-biased')
+    run_relative(pix, feats, strength, out, groups, min_photos, by_light)
 
 
 def selftest():
     assert pretty('vivo_300_pro') == 'Vivo 300 Pro'
     rng = np.random.default_rng(0)
-    fake = [rng.uniform(20, 240, (3000, 3)) for _ in range(4)]
+    # mix dark + bright
+    fake = [rng.uniform(10, 80, (3000, 3)) for _ in range(2)]
+    fake += [rng.uniform(40, 220, (3000, 3)) for _ in range(2)]
     char = analyse_character(fake)
     basic = absolute_basic_sliders(char, 1.0)
-    assert basic['Shadows2012'] >= 15
-    assert basic['Highlights2012'] <= -10
+    assert basic['Shadows2012'] >= 20
+    assert basic['Highlights2012'] <= -15
+    assert basic['Exposure2012'] > -0.2  # must not go strongly negative
+    curves = absolute_curves(char, 1.0)
+    assert curves[0] == (0, 12) or curves[0][1] >= 6
     print('selftest ok')
 
 
@@ -296,8 +315,10 @@ if __name__ == '__main__':
     ap.add_argument('--min-photos', type=int, default=3)
     ap.add_argument('-s', '--strength', type=float, default=1.0)
     ap.add_argument('--absolute', action='store_true',
-                    help='Character-based absolute looks (recommended)')
+                    help='One character-based preset per folder (recommended)')
+    ap.add_argument('--by-light', action='store_true',
+                    help='Also generate Bright/Low Light relative variants')
     ap.add_argument('--selftest', action='store_true')
     a = ap.parse_args()
     main(a.samples_dir, a.out_dir, a.exclude, not a.no_groups,
-         a.min_photos, a.strength, a.absolute)
+         a.min_photos, a.strength, a.absolute, a.by_light)

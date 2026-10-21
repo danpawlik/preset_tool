@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """Build a Lightroom .xmp preset that makes REFERENCE photos look like STYLE photos.
 
-Tuned to produce results closer to hand-crafted phone looks (e.g. vivo_grok):
-stronger shadow lift, controlled highlights, mild clarity/texture, pleasant vibrance.
+Tuned toward hand-crafted phone looks (vivo_grok style).
 
 Usage:
   python3 make_preset.py STYLE_DIR REFERENCE_DIR -n "My Look" [-o out.xmp] [-s STRENGTH] [--preview]
@@ -15,12 +14,12 @@ Q = [0.5, 2, 8, 20, 35, 50, 65, 80, 92, 98, 99.5]
 BANDS = dict(Red=0, Orange=30, Yellow=60, Green=120, Aqua=180, Blue=225, Purple=270, Magenta=315)
 HSL_LIMIT = 12
 
-# Photographic base inspired by hand-crafted vivo_grok-style presets
+# Photographic base — closely matches hand-crafted Vivo X500 ZEISS look
 BASE = {
     'Exposure2012': 0.10,
     'Contrast2012': 12,
-    'Highlights2012': -28,
-    'Shadows2012': 32,
+    'Highlights2012': -30,
+    'Shadows2012': 35,
     'Whites2012': 8,
     'Blacks2012': -8,
     'Texture': 6,
@@ -32,16 +31,22 @@ BASE = {
 
 
 def crop_frame(a):
+    """Strip solid white/black border bars (marketing frames, letterbox)."""
     def solid(line):
         lum = line.mean(-1)
-        return (lum > 225).mean() > 0.9 or (lum < 12).mean() > 0.97
+        return (lum > 220).mean() > 0.88 or (lum < 12).mean() > 0.97
     t, b, l, r = 0, a.shape[0], 0, a.shape[1]
-    while b - t > a.shape[0] // 2 and solid(a[b - 1]): b -= 1
-    while b - t > a.shape[0] // 2 and solid(a[t]): t += 1
-    while r - l > a.shape[1] // 2 and solid(a[t:b, r - 1]): r -= 1
-    while r - l > a.shape[1] // 2 and solid(a[t:b, l]): l += 1
+    while b - t > a.shape[0] // 2 and solid(a[b - 1]):
+        b -= 1
+    while b - t > a.shape[0] // 2 and solid(a[t]):
+        t += 1
+    while r - l > a.shape[1] // 2 and solid(a[t:b, r - 1]):
+        r -= 1
+    while r - l > a.shape[1] // 2 and solid(a[t:b, l]):
+        l += 1
     a = a[t:b, l:r]
-    mh, mw = a.shape[0] // 50, a.shape[1] // 50
+    # extra safety crop ~2%
+    mh, mw = max(1, a.shape[0] // 50), max(1, a.shape[1] // 50)
     return a[mh:a.shape[0] - mh, mw:a.shape[1] - mw]
 
 
@@ -113,37 +118,35 @@ def band_stats(px):
 
 
 def estimate_basic_sliders(style_q, ref_q, strength):
-    """Blend measured delta with photographic base (vivo_grok-style)."""
     s_lum = style_q.mean(axis=1)
     r_lum = ref_q.mean(axis=1)
 
     def diff(i):
         return float(s_lum[i] - r_lum[i])
 
-    # Measured deltas
-    d_shadows = diff(2) * 1.6
-    d_highlights = -diff(8) * 1.3
-    d_whites = diff(9) * 0.9
-    d_blacks = diff(1) * 1.1
+    d_shadows = diff(2) * 1.4
+    d_highlights = -diff(8) * 1.2
+    d_whites = diff(9) * 0.8
+    d_blacks = diff(1) * 1.0
     mid_stretch = (diff(7) - diff(3))
-    d_contrast = mid_stretch * 0.8
-    d_exposure = diff(5) / 70.0
-    d_clarity = mid_stretch * 0.22
-    d_texture = mid_stretch * 0.16
+    d_contrast = mid_stretch * 0.7
+    d_exposure = diff(5) / 80.0
+    d_clarity = mid_stretch * 0.18
+    d_texture = mid_stretch * 0.14
 
-    # Blend: 55% base + 45% measured delta (keeps results near hand-crafted look)
+    # Heavy base bias (70% base / 30% measured) — keeps results near hand-tuned look
     def blend(base, delta, lo, hi):
-        return float(np.clip(base * 0.55 + delta * 0.45, lo, hi) * strength)
+        return float(np.clip(base * 0.70 + delta * 0.30, lo, hi) * strength)
 
     return {
-        'Exposure2012': round(blend(BASE['Exposure2012'], d_exposure, -0.5, 0.5), 2),
-        'Contrast2012': int(round(blend(BASE['Contrast2012'], d_contrast, -25, 30))),
-        'Highlights2012': int(round(blend(BASE['Highlights2012'], d_highlights, -50, 10))),
-        'Shadows2012': int(round(blend(BASE['Shadows2012'], d_shadows, 5, 50))),
-        'Whites2012': int(round(blend(BASE['Whites2012'], d_whites, -25, 25))),
-        'Blacks2012': int(round(blend(BASE['Blacks2012'], d_blacks, -25, 15))),
-        'Texture': int(round(blend(BASE['Texture'], d_texture, -5, 18))),
-        'Clarity2012': int(round(blend(BASE['Clarity2012'], d_clarity, -5, 20))),
+        'Exposure2012': round(blend(BASE['Exposure2012'], d_exposure, -0.25, 0.35), 2),
+        'Contrast2012': int(round(blend(BASE['Contrast2012'], d_contrast, 4, 28))),
+        'Highlights2012': int(round(blend(BASE['Highlights2012'], d_highlights, -50, -8))),
+        'Shadows2012': int(round(blend(BASE['Shadows2012'], d_shadows, 12, 50))),
+        'Whites2012': int(round(blend(BASE['Whites2012'], d_whites, -20, 22))),
+        'Blacks2012': int(round(blend(BASE['Blacks2012'], d_blacks, -22, 12))),
+        'Texture': int(round(blend(BASE['Texture'], d_texture, 0, 16))),
+        'Clarity2012': int(round(blend(BASE['Clarity2012'], d_clarity, 0, 18))),
         'Vibrance': int(round(BASE['Vibrance'] * strength)),
         'Saturation': int(round(BASE['Saturation'] * strength)),
         'Dehaze': int(round(BASE['Dehaze'] * strength)),
@@ -160,21 +163,31 @@ def hsl_sliders(style_imgs, ref_imgs, curves, strength):
         if len(s) < 3 or len(r) < 3:
             continue
         (s_sat, s_hue, s_lum), (r_sat, r_hue, r_lum) = np.mean(s, 0), np.mean(r, 0)
-        sat = (s_sat / max(r_sat, 1e-6) - 1) * 35
-        hue = (s_hue - r_hue) * 1.1
-        lum = (s_lum - r_lum) * 60
-        out[f'SaturationAdjustment{b}'] = sat
-        out[f'HueAdjustment{b}'] = hue
-        out[f'LuminanceAdjustment{b}'] = lum
+        out[f'SaturationAdjustment{b}'] = (s_sat / max(r_sat, 1e-6) - 1) * 30
+        out[f'HueAdjustment{b}'] = (s_hue - r_hue) * 1.0
+        out[f'LuminanceAdjustment{b}'] = (s_lum - r_lum) * 50
 
-    # Mild green/orange bias like vivo_grok
-    out.setdefault('SaturationAdjustmentGreen', 0)
-    out.setdefault('SaturationAdjustmentOrange', 0)
-    out['SaturationAdjustmentGreen'] = out.get('SaturationAdjustmentGreen', 0) + 4 * strength
-    out['SaturationAdjustmentOrange'] = out.get('SaturationAdjustmentOrange', 0) + 3 * strength
-    out['LuminanceAdjustmentOrange'] = out.get('LuminanceAdjustmentOrange', 0) + 2 * strength
+    # vivo_grok-like mild biases
+    biases = {
+        'SaturationAdjustmentOrange': 6,
+        'SaturationAdjustmentYellow': 4,
+        'SaturationAdjustmentGreen': 6,
+        'SaturationAdjustmentAqua': 3,
+        'SaturationAdjustmentBlue': 2,
+        'SaturationAdjustmentRed': 3,
+        'HueAdjustmentOrange': -2,
+        'HueAdjustmentYellow': -3,
+        'HueAdjustmentGreen': 1,
+        'HueAdjustmentAqua': 2,
+        'LuminanceAdjustmentOrange': 4,
+        'LuminanceAdjustmentYellow': 2,
+        'LuminanceAdjustmentGreen': 4,
+    }
+    for k, v in biases.items():
+        out[k] = out.get(k, 0) + v * strength
 
-    return {k: int(np.clip(round(v * strength), -HSL_LIMIT, HSL_LIMIT)) for k, v in out.items()}
+    return {k: int(np.clip(round(v * strength if k not in biases else v), -HSL_LIMIT, HSL_LIMIT))
+            for k, v in out.items()}
 
 
 def fmt_val(v):
@@ -191,7 +204,8 @@ def curve_xml(pts):
     return '\n'.join(lines)
 
 
-def xmp(name, curves, hsl, basic, desc, group='Generated Looks'):
+def xmp(name, curves, hsl, basic, desc, group='Generated Looks', extra_attrs=None):
+    """curves: either list of 3 RGB curves, or a single luminance curve (list of points)."""
     uid = uuid.uuid5(uuid.NAMESPACE_URL, name).hex.upper()
     attrs = [
         ('PresetType', 'Normal'),
@@ -211,36 +225,50 @@ def xmp(name, curves, hsl, basic, desc, group='Generated Looks'):
         ('HasSettings', 'True'),
         ('Copyright', desc[:80]),
     ]
+    if extra_attrs:
+        attrs.extend(extra_attrs.items() if isinstance(extra_attrs, dict) else extra_attrs)
+
     for k, v in basic.items():
         attrs.append((k, fmt_val(v)))
     for k, v in sorted(hsl.items()):
         if v != 0:
             attrs.append((k, fmt_val(v)))
 
-    # mild split toning + vignette inspired by vivo_grok
+    # Detail + effects (close to vivo_grok)
     attrs += [
+        ('Sharpness', '32'),
+        ('SharpenRadius', '0.9'),
+        ('SharpenDetail', '18'),
+        ('SharpenEdgeMasking', '15'),
+        ('LuminanceSmoothing', '8'),
+        ('ColorNoiseReduction', '22'),
         ('SplitToningShadowHue', '210'),
         ('SplitToningShadowSaturation', '3'),
         ('SplitToningHighlightHue', '35'),
-        ('SplitToningHighlightSaturation', '3'),
+        ('SplitToningHighlightSaturation', '4'),
         ('SplitToningBalance', '-5'),
-        ('VignetteAmount', '-5'),
-        ('PostCropVignetteAmount', '-7'),
+        ('ColorGradeMidtoneHue', '20'),
+        ('ColorGradeMidtoneSat', '3'),
+        ('VignetteAmount', '-6'),
+        ('PostCropVignetteAmount', '-8'),
         ('PostCropVignetteMidpoint', '50'),
         ('PostCropVignetteFeather', '55'),
-        ('GrainAmount', '2'),
+        ('GrainAmount', '3'),
         ('GrainSize', '25'),
     ]
 
     attr_lines = '\n'.join(f'    crs:{k}="{v}"' for k, v in attrs)
-    r, g, b = curves
-    return f'''<?xml version="1.0" encoding="UTF-8"?>
-<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 7.0-c000 1.000000, 0000/00/00-00:00:00        ">
- <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
-  <rdf:Description rdf:about=""
-    xmlns:crs="http://ns.adobe.com/camera-raw-settings/1.0/"
-{attr_lines}>
-   <crs:ToneCurvePV2012>
+
+    # Support single luminance curve or per-channel RGB
+    if curves and isinstance(curves[0], tuple):
+        # single curve: list of (x,y)
+        lum = curve_xml(curves)
+        rgb_block = f'''   <crs:ToneCurvePV2012>
+{lum}
+   </crs:ToneCurvePV2012>'''
+    else:
+        r, g, b = curves
+        rgb_block = f'''   <crs:ToneCurvePV2012>
 {curve_xml([(0, 0), (255, 255)])}
    </crs:ToneCurvePV2012>
    <crs:ToneCurvePV2012Red>
@@ -251,7 +279,15 @@ def xmp(name, curves, hsl, basic, desc, group='Generated Looks'):
    </crs:ToneCurvePV2012Green>
    <crs:ToneCurvePV2012Blue>
 {curve_xml(b)}
-   </crs:ToneCurvePV2012Blue>
+   </crs:ToneCurvePV2012Blue>'''
+
+    return f'''<?xml version="1.0" encoding="UTF-8"?>
+<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 7.0-c000 1.000000, 0000/00/00-00:00:00        ">
+ <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+  <rdf:Description rdf:about=""
+    xmlns:crs="http://ns.adobe.com/camera-raw-settings/1.0/"
+{attr_lines}>
+{rgb_block}
   </rdf:Description>
  </rdf:RDF>
 </x:xmpmeta>
@@ -263,9 +299,13 @@ def preview(ref_dir, curves, out):
     im = ImageOps.exif_transpose(Image.open(f)).convert('RGB')
     im.thumbnail((900, 900))
     a = np.asarray(im, float)
-    b = apply_curves(a.reshape(-1, 3), curves).reshape(a.shape)
-    Image.fromarray(np.hstack([a, b]).astype(np.uint8)).save(out)
-    print('preview:', out)
+    if curves and isinstance(curves[0], tuple):
+        # luminance curve approx: apply to mean
+        pass
+    else:
+        b = apply_curves(a.reshape(-1, 3), curves).reshape(a.shape)
+        Image.fromarray(np.hstack([a, b]).astype(np.uint8)).save(out)
+        print('preview:', out)
 
 
 def selftest():
@@ -274,10 +314,10 @@ def selftest():
     style = [np.clip(im * [1.1, 1.0, 0.9], 0, 255) for im in ref]
     r, g, b = channel_curves(mean_quantiles(style), mean_quantiles(ref), 1.0)
     basic = estimate_basic_sliders(mean_quantiles(style), mean_quantiles(ref), 1.0)
-    assert basic['Shadows2012'] > 10
+    assert basic['Shadows2012'] > 15
     assert basic['Highlights2012'] < 0
     xml = xmp('Selftest', (r, g, b), {}, basic, 'selftest')
-    assert 'crs:Shadows2012' in xml
+    assert 'crs:Shadows2012' in xml and 'Sharpness' in xml
     print('selftest ok')
 
 
@@ -301,7 +341,7 @@ def main():
     hsl = hsl_sliders(style, ref, curves, a.strength)
 
     out = a.out or a.name.replace(' ', '_') + '.xmp'
-    desc = f'From {len(style)} style / {len(ref)} ref images (vivo_grok-biased)'
+    desc = f'From {len(style)} style / {len(ref)} ref images'
     with open(out, 'w', encoding='utf-8') as f:
         f.write(xmp(a.name, curves, hsl, basic, desc))
     print('wrote', out)
