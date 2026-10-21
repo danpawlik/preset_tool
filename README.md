@@ -5,7 +5,8 @@ Generate Lightroom presets (`.xmp`) from pictures you provide.
 Two scripts:
 
 - `make_preset.py` - make **your** photos look like a set of style photos.
-- `phone_presets.py` - derive one "look" preset per phone brand from sample folders.
+- `folder_presets.py` - derive presets for every sub-folder of a samples directory
+  (one folder = one phone, camera, film stock, ...), compared against each other.
 
 Presets work in Lightroom Classic, Lightroom (cloud) and Adobe Camera Raw, for raw files and JPEGs.
 
@@ -56,45 +57,67 @@ saturation / hue / luminance gap per Lightroom HSL band is measured after those 
 and written as HSL sliders. White/black watermark frames (e.g. Leica borders) are
 cropped before measuring.
 
-## phone_presets.py
+## folder_presets.py
 
 ```bash
-python3 phone_presets.py SAMPLES_DIR OUT_DIR
+python3 folder_presets.py SAMPLES_DIR OUT_DIR [--exclude NAME ...] [--no-groups] [--min-photos N]
 ```
 
-Expects `SAMPLES_DIR` to contain `vivo_300_pro/`, `vivo_500_pro/`, `xiaomi_17/`,
-`xiaomi_18/`. Writes 10 presets:
+| Argument | Meaning |
+|---|---|
+| `SAMPLES_DIR` | directory whose sub-folders each hold one look (min. 2 folders) |
+| `OUT_DIR` | where to write the `.xmp` presets |
+| `--exclude` | file or folder names to ignore (e.g. wrong-camera shots, an output folder) |
+| `--no-groups` | skip the combined preset per name prefix |
+| `--min-photos` | photos needed per folder and light (default 3) |
+| `--selftest` | run the built-in check and exit |
 
-- 2 per phone: `<Phone>_-_Bright_Light.xmp` and `<Phone>_-_Low_Light.xmp`
-- 1 per brand: `Vivo_Look.xmp`, `Xiaomi_Look.xmp`
+Nothing is hardcoded - any folder names work:
 
-Photos are split into bright and dim scenes by median luminance (split at the
-median of all photos, ~80/255). Each phone preset = that phone's median render in
-that light vs. the average of all four phones in the same light, so bright scenes
-are compared with bright scenes. Brand presets use all photos. Photos far from their
-phone's typical render are ignored, and known wrong-phone files are excluded
-(`EXCLUDE` in the script).
+```
+samples/
+  vivo_300_pro/     -> "Vivo 300 Pro - Bright Light", "Vivo 300 Pro - Low Light"
+  vivo_500_pro/     -> "Vivo 500 Pro - Bright Light", "Vivo 500 Pro - Low Light"
+  xiaomi_17/        -> "Xiaomi 17 - ..."
+  xiaomi_18/        -> "Xiaomi 18 - ..."
+                    -> "Vivo Look", "Xiaomi Look"   (groups by prefix)
+```
 
-Current result from the sample set (vs. the average phone, 0-255 levels):
+Examples:
 
-| Preset | Photos | Mids | Highlights | Warmth | Notes |
-|---|---|---|---|---|---|
-| Vivo X300 Pro - Bright Light | 20 | -8 | +9 | +6 | yellow/green +5-7% |
-| Vivo X300 Pro - Low Light | 6 | +5 | +4 | +7 | yellow +10%; few photos, low confidence |
-| Vivo X500 Pro - Bright Light | 19 | +1 | +10 | +8 | aqua +4% |
-| Vivo X500 Pro - Low Light | 11 | +10 | +10 | +1 | brighter, neutral |
-| Xiaomi 17 - Bright Light | 21 | +7 | -5 | -7 | reds/blues +5%, greens -7% |
-| Xiaomi 17 - Low Light | 37 | -11 | -4 | -18 | cool and dark, yellow -11% |
-| Xiaomi 18 - Bright Light | 15 | +1 | -14 | -7 | yellow -9% |
-| Xiaomi 18 - Low Light | 19 | -4 | -9 | +9 | reds +5% |
-| Vivo Look | 56 | +10 | +13 | +5 | |
-| Xiaomi Look | 92 | -10 | -13 | -5 | |
+```bash
+# Presets for every folder in ~/samples
+python3 folder_presets.py ~/samples ~/presets
 
-Confidence: the brand split (Vivo brighter than Xiaomi) holds under resampling.
-The difference between phones of the same brand does not: on same-scene pairs,
-X300-vs-X500 and 17-vs-18 predicted the held-out phone no better than chance
-(vivo 10/19 scenes, xiaomi 3/6). Per-phone presets are each phone's own average
-render, so they're usable, but treat small same-brand differences as noise.
+# Ignore some files/folders (wrong camera, output dir)
+python3 folder_presets.py ~/Downloads/photo_samples ./examples \
+    --exclude presets oppo_find_x9_pro 262830-329.jpg HUOVrgla4AAowpt.jpg
+
+# Film stocks, no group presets, require more photos per preset
+python3 folder_presets.py ~/film_scans ~/presets --no-groups --min-photos 5
+```
+
+How it works:
+
+- **2 presets per folder.** Photos are split into bright and dim scenes by median
+  luminance (split at the median of all photos). Each preset = that folder's median
+  render in that light vs. the average of all folders in the same light, so bright
+  scenes are compared with bright scenes. A light with fewer than `--min-photos`
+  photos in a folder gets no preset (the script says so).
+- **1 preset per group.** Folders sharing the name prefix before the first `_` or
+  `-` (`vivo_300_pro` + `vivo_500_pro` -> `Vivo`) get a combined look from all
+  their photos. Single-folder prefixes get no group preset.
+- **Outliers ignored.** Photos far from their folder's typical render are skipped
+  and listed in the output.
+- The script prints a summary per preset (shadows / mids / highlights / warmth /
+  saturation vs. the average folder).
+
+Notes from the vivo / Xiaomi sample set: the brand split (Vivo ~20 levels brighter
+in mids/highlights than Xiaomi) holds under resampling. The difference between
+phones of the same brand does not: on same-scene pairs, X300-vs-X500 and 17-vs-18
+predicted the held-out phone no better than chance (vivo 10/19 scenes, xiaomi 3/6).
+Per-folder presets are each folder's own average render, so they're usable, but
+treat small differences between similar folders as noise.
 
 ## Installing presets in Lightroom
 
@@ -109,5 +132,6 @@ Generated presets support the **Amount** slider, so you can dial them down.
   Lightroom render.
 - Only global tone/colour is reproduced, not phone-specific local processing
   (local HDR, skin smoothing, sharpening).
-- `phone_presets.py` has no neutral reference, so presets are relative to the
-  average of the sampled phones, and scene mix between folders can bias them.
+- `folder_presets.py` has no neutral reference, so presets are relative to the
+  average of the sampled folders (adding/removing a folder changes all presets),
+  and different scene mixes between folders can bias them.

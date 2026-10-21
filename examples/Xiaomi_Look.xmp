@@ -14,37 +14,37 @@
    crs:ProcessVersion="11.0"
    crs:ToneCurveName2012="Custom"
    crs:HasSettings="True"
-   crs:SaturationAdjustmentRed="+15"
-   crs:HueAdjustmentRed="+4"
-   crs:LuminanceAdjustmentRed="+4"
-   crs:SaturationAdjustmentOrange="-1"
-   crs:HueAdjustmentOrange="+8"
-   crs:LuminanceAdjustmentOrange="-2"
-   crs:SaturationAdjustmentYellow="-30"
-   crs:HueAdjustmentYellow="-10"
-   crs:LuminanceAdjustmentYellow="-9"
-   crs:SaturationAdjustmentGreen="-3"
-   crs:HueAdjustmentGreen="+0"
-   crs:LuminanceAdjustmentGreen="-5"
-   crs:SaturationAdjustmentAqua="-4"
-   crs:HueAdjustmentAqua="+3"
-   crs:LuminanceAdjustmentAqua="-18"
-   crs:SaturationAdjustmentBlue="+2"
+   crs:SaturationAdjustmentRed="+17"
+   crs:HueAdjustmentRed="+15"
+   crs:LuminanceAdjustmentRed="+1"
+   crs:SaturationAdjustmentOrange="-7"
+   crs:HueAdjustmentOrange="+4"
+   crs:LuminanceAdjustmentOrange="-5"
+   crs:SaturationAdjustmentYellow="-29"
+   crs:HueAdjustmentYellow="-5"
+   crs:LuminanceAdjustmentYellow="-18"
+   crs:SaturationAdjustmentGreen="-8"
+   crs:HueAdjustmentGreen="-1"
+   crs:LuminanceAdjustmentGreen="-13"
+   crs:SaturationAdjustmentAqua="-11"
+   crs:HueAdjustmentAqua="+5"
+   crs:LuminanceAdjustmentAqua="-19"
+   crs:SaturationAdjustmentBlue="+5"
    crs:HueAdjustmentBlue="-14"
-   crs:LuminanceAdjustmentBlue="-8"
-   crs:SaturationAdjustmentPurple="+2"
-   crs:HueAdjustmentPurple="+0"
-   crs:LuminanceAdjustmentPurple="+11"
-   crs:SaturationAdjustmentMagenta="+2"
-   crs:HueAdjustmentMagenta="-4"
-   crs:LuminanceAdjustmentMagenta="+20">
+   crs:LuminanceAdjustmentBlue="-12"
+   crs:SaturationAdjustmentPurple="-14"
+   crs:HueAdjustmentPurple="-5"
+   crs:LuminanceAdjustmentPurple="+17"
+   crs:SaturationAdjustmentMagenta="-5"
+   crs:HueAdjustmentMagenta="-3"
+   crs:LuminanceAdjustmentMagenta="+15">
    <crs:Name><rdf:Alt><rdf:li xml:lang="x-default">Xiaomi Look</rdf:li></rdf:Alt></crs:Name>
-   <crs:Group><rdf:Alt><rdf:li xml:lang="x-default">Phone Looks</rdf:li></rdf:Alt></crs:Group>
-   <crs:Description><rdf:Alt><rdf:li xml:lang="x-default">Median phone render vs the average of the sampled phones; outlier photos ignored.</rdf:li></rdf:Alt></crs:Description>
+   <crs:Group><rdf:Alt><rdf:li xml:lang="x-default">Folder Looks</rdf:li></rdf:Alt></crs:Group>
+   <crs:Description><rdf:Alt><rdf:li xml:lang="x-default">Median render vs the average of the sampled folders; outlier photos ignored.</rdf:li></rdf:Alt></crs:Description>
    <crs:ToneCurvePV2012><rdf:Seq><rdf:li>0, 0</rdf:li><rdf:li>255, 255</rdf:li></rdf:Seq></crs:ToneCurvePV2012>
-   <crs:ToneCurvePV2012Red><rdf:Seq><rdf:li>0, 1</rdf:li><rdf:li>5, 6</rdf:li><rdf:li>10, 10</rdf:li><rdf:li>20, 18</rdf:li><rdf:li>36, 29</rdf:li><rdf:li>61, 52</rdf:li><rdf:li>89, 76</rdf:li><rdf:li>126, 108</rdf:li><rdf:li>163, 140</rdf:li><rdf:li>196, 174</rdf:li><rdf:li>229, 217</rdf:li><rdf:li>243, 238</rdf:li><rdf:li>255, 250</rdf:li></rdf:Seq></crs:ToneCurvePV2012Red>
-   <crs:ToneCurvePV2012Green><rdf:Seq><rdf:li>0, 1</rdf:li><rdf:li>6, 7</rdf:li><rdf:li>10, 10</rdf:li><rdf:li>20, 16</rdf:li><rdf:li>36, 28</rdf:li><rdf:li>55, 44</rdf:li><rdf:li>84, 72</rdf:li><rdf:li>114, 98</rdf:li><rdf:li>150, 132</rdf:li><rdf:li>185, 164</rdf:li><rdf:li>218, 203</rdf:li><rdf:li>238, 232</rdf:li><rdf:li>255, 249</rdf:li></rdf:Seq></crs:ToneCurvePV2012Green>
-   <crs:ToneCurvePV2012Blue><rdf:Seq><rdf:li>0, 1</rdf:li><rdf:li>7, 7</rdf:li><rdf:li>14, 12</rdf:li><rdf:li>25, 20</rdf:li><rdf:li>44, 38</rdf:li><rdf:li>70, 64</rdf:li><rdf:li>97, 89</rdf:li><rdf:li>136, 124</rdf:li><rdf:li>187, 172</rdf:li><rdf:li>221, 209</rdf:li><rdf:li>236, 230</rdf:li><rdf:li>255, 249</rdf:li></rdf:Seq></crs:ToneCurvePV2012Blue>
+   <crs:ToneCurvePV2012Red><rdf:Seq><rdf:li>0, 1</rdf:li><rdf:li>6, 7</rdf:li><rdf:li>11, 11</rdf:li><rdf:li>20, 18</rdf:li><rdf:li>37, 30</rdf:li><rdf:li>62, 54</rdf:li><rdf:li>85, 76</rdf:li><rdf:li>122, 108</rdf:li><rdf:li>156, 140</rdf:li><rdf:li>191, 175</rdf:li><rdf:li>223, 218</rdf:li><rdf:li>236, 238</rdf:li><rdf:li>255, 255</rdf:li></rdf:Seq></crs:ToneCurvePV2012Red>
+   <crs:ToneCurvePV2012Green><rdf:Seq><rdf:li>0, 1</rdf:li><rdf:li>6, 7</rdf:li><rdf:li>11, 10</rdf:li><rdf:li>20, 16</rdf:li><rdf:li>35, 28</rdf:li><rdf:li>54, 44</rdf:li><rdf:li>78, 73</rdf:li><rdf:li>103, 97</rdf:li><rdf:li>140, 131</rdf:li><rdf:li>177, 165</rdf:li><rdf:li>212, 204</rdf:li><rdf:li>229, 232</rdf:li><rdf:li>255, 255</rdf:li></rdf:Seq></crs:ToneCurvePV2012Green>
+   <crs:ToneCurvePV2012Blue><rdf:Seq><rdf:li>0, 1</rdf:li><rdf:li>7, 7</rdf:li><rdf:li>13, 12</rdf:li><rdf:li>24, 21</rdf:li><rdf:li>41, 38</rdf:li><rdf:li>65, 66</rdf:li><rdf:li>87, 89</rdf:li><rdf:li>121, 121</rdf:li><rdf:li>178, 172</rdf:li><rdf:li>213, 210</rdf:li><rdf:li>226, 230</rdf:li><rdf:li>255, 255</rdf:li></rdf:Seq></crs:ToneCurvePV2012Blue>
   </rdf:Description>
  </rdf:RDF>
 </x:xmpmeta>

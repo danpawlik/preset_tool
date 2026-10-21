@@ -56,9 +56,13 @@ def load(path, size=600):
     return crop_frame(np.asarray(im, float)).reshape(-1, 3)
 
 
+def list_images(d):
+    return sorted(f for f in glob.glob(os.path.join(d, '*'))
+                  if f.lower().endswith(('.jpg', '.jpeg', '.png', '.tif', '.tiff', '.webp')))
+
+
 def load_dir(d):
-    files = sorted(f for f in glob.glob(os.path.join(d, '*'))
-                   if f.lower().endswith(('.jpg', '.jpeg', '.png', '.tif', '.tiff', '.webp', '.heic')))
+    files = list_images(d)
     imgs = []
     for f in files:
         try:
