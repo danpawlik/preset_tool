@@ -24,6 +24,7 @@ pip install --user numpy pillow
 python3 make_preset.py STYLE_DIR REFERENCE_DIR -n "My Look" [-o out.xmp] [-s STRENGTH] [--preview]
 ```
 
+
 | Argument | Meaning |
 |---|---|
 | `STYLE_DIR` | photos with the look you want (min. 3) |
@@ -46,6 +47,12 @@ python3 make_preset.py ~/photos/vivo_x300 ~/photos/my_pixel -n "Vivo X300 Soft" 
 
 # Check the maths still works
 python3 make_preset.py --selftest
+
+# Make absolute preset
+python3 ./folder_presets.py --absolute ~/Downloads/photo_samples examples --exclude presets 262830-329.jpg HUOVrgla4AAowpt.jpg
+
+# Another example
+python3 ./folder_presets.py  ~/Downloads/photo_samples examples --exclude presets 262830-329.jpg HUOVrgla4AAowpt.jpg
 ```
 
 **Tip:** the closer the scenes in both folders, the better. Same scenes are ideal,
