@@ -26,7 +26,7 @@ Examples:
 
 Import the .xmp in Lightroom: Presets panel -> "+" -> Import Presets.
 """
-import argparse, colorsys, glob, os, sys, uuid
+import argparse, glob, os, sys, uuid
 import numpy as np
 from PIL import Image, ImageOps
 
@@ -35,10 +35,25 @@ Q = [0.5, 2, 8, 20, 35, 50, 65, 80, 92, 98, 99.5]
 BANDS = dict(Red=0, Orange=30, Yellow=60, Green=120, Aqua=180, Blue=225, Purple=270, Magenta=315)
 
 
+def crop_frame(a):
+    # strip white/black border bars (e.g. Leica-style watermark frames), then a 2% safety margin
+    def solid(line):
+        lum = line.mean(-1)
+        return (lum > 225).mean() > 0.9 or (lum < 12).mean() > 0.97
+    t, b, l, r = 0, a.shape[0], 0, a.shape[1]
+    while b - t > a.shape[0] // 2 and solid(a[b - 1]): b -= 1
+    while b - t > a.shape[0] // 2 and solid(a[t]): t += 1
+    while r - l > a.shape[1] // 2 and solid(a[t:b, r - 1]): r -= 1
+    while r - l > a.shape[1] // 2 and solid(a[t:b, l]): l += 1
+    a = a[t:b, l:r]
+    mh, mw = a.shape[0] // 50, a.shape[1] // 50
+    return a[mh:a.shape[0] - mh, mw:a.shape[1] - mw]
+
+
 def load(path, size=600):
     im = ImageOps.exif_transpose(Image.open(path)).convert('RGB')
     im.thumbnail((size, size))
-    return np.asarray(im, float).reshape(-1, 3)
+    return crop_frame(np.asarray(im, float)).reshape(-1, 3)
 
 
 def load_dir(d):
@@ -77,9 +92,16 @@ def apply_curves(px, curves):
     return np.stack([np.interp(px[:, c], [p[0] for p in curves[c]], [p[1] for p in curves[c]]) for c in range(3)], axis=1)
 
 
+def rgb_to_hsv(px):
+    r, g, b = px.T / 255
+    mx, mn = px.max(1) / 255, px.min(1) / 255
+    d = np.where(mx > mn, mx - mn, 1)
+    h = np.where(mx == r, (g - b) / d % 6, np.where(mx == g, (b - r) / d + 2, (r - g) / d + 4)) * 60
+    return h, np.where(mx > 0, (mx - mn) / np.maximum(mx, 1e-9), 0), mx
+
+
 def band_stats(px):
-    hsv = np.array([colorsys.rgb_to_hsv(*p) for p in px[::7] / 255])  # subsample, colorsys is slow
-    h, s, v = hsv[:, 0] * 360, hsv[:, 1], hsv[:, 2]
+    h, s, v = rgb_to_hsv(px)
     ok = (s > 0.15) & (v > 0.15) & (v < 0.97)
     out = {}
     for name, centre in BANDS.items():

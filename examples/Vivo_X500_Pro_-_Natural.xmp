@@ -1,0 +1,38 @@
+<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 7.0-c000">
+ <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+  <rdf:Description rdf:about="" xmlns:crs="http://ns.adobe.com/camera-raw-settings/1.0/"
+   crs:PresetType="Normal"
+   crs:UUID="37064450316257DEB8385B3FA356D73F"
+   crs:SupportsAmount="True"
+   crs:SupportsColor="True"
+   crs:SupportsMonochrome="False"
+   crs:SupportsHighDynamicRange="True"
+   crs:SupportsNormalDynamicRange="True"
+   crs:SupportsSceneReferred="True"
+   crs:SupportsOutputReferred="True"
+   crs:Version="15.0"
+   crs:ProcessVersion="11.0"
+   crs:ToneCurveName2012="Custom"
+   crs:HasSettings="True"
+   crs:Exposure2012="+0.12"
+   crs:Contrast2012="+4"
+   crs:Highlights2012="-20"
+   crs:Shadows2012="+15"
+   crs:Whites2012="+4"
+   crs:Blacks2012="-2"
+   crs:Clarity2012="+4"
+   crs:Texture="+6"
+   crs:Vibrance="+8"
+   crs:Saturation="0"
+   crs:SaturationAdjustmentRed="+3">
+   <crs:Name><rdf:Alt><rdf:li xml:lang="x-default">Vivo X500 Pro - Natural</rdf:li></rdf:Alt></crs:Name>
+   <crs:ShortName><rdf:Alt><rdf:li xml:lang="x-default">Natural</rdf:li></rdf:Alt></crs:ShortName>
+   <crs:Group><rdf:Alt><rdf:li xml:lang="x-default">Vivo Looks</rdf:li></rdf:Alt></crs:Group>
+   <crs:Description><rdf:Alt><rdf:li xml:lang="x-default">Brighter, cleaner X500 render: neutral-cool shadows, open highlights.</rdf:li></rdf:Alt></crs:Description>
+   <crs:ToneCurvePV2012><rdf:Seq><rdf:li>0, 0</rdf:li><rdf:li>40, 39</rdf:li><rdf:li>128, 130</rdf:li><rdf:li>200, 205</rdf:li><rdf:li>255, 250</rdf:li></rdf:Seq></crs:ToneCurvePV2012>
+   <crs:ToneCurvePV2012Red><rdf:Seq><rdf:li>0, 0</rdf:li><rdf:li>128, 129</rdf:li><rdf:li>255, 255</rdf:li></rdf:Seq></crs:ToneCurvePV2012Red>
+   <crs:ToneCurvePV2012Green><rdf:Seq><rdf:li>0, 0</rdf:li><rdf:li>128, 129</rdf:li><rdf:li>255, 255</rdf:li></rdf:Seq></crs:ToneCurvePV2012Green>
+   <crs:ToneCurvePV2012Blue><rdf:Seq><rdf:li>0, 0</rdf:li><rdf:li>48, 51</rdf:li><rdf:li>128, 129</rdf:li><rdf:li>255, 254</rdf:li></rdf:Seq></crs:ToneCurvePV2012Blue>
+  </rdf:Description>
+ </rdf:RDF>
+</x:xmpmeta>
