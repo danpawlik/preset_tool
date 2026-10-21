@@ -18,39 +18,49 @@
     crs:WhiteBalance="As Shot"
     crs:ToneCurveName2012="Custom"
     crs:HasSettings="True"
-    crs:Copyright="Relative look vs average of folders"
-    crs:Exposure2012="+0.26"
-    crs:Contrast2012="+14"
-    crs:Highlights2012="-42"
-    crs:Shadows2012="+10"
-    crs:Whites2012="+23"
-    crs:Blacks2012="+2"
-    crs:Texture="+3"
+    crs:Copyright="Relative vivo_grok-biased"
+    crs:Exposure2012="+0.15"
+    crs:Contrast2012="+10"
+    crs:Highlights2012="-29"
+    crs:Shadows2012="+19"
+    crs:Whites2012="+12"
+    crs:Blacks2012="-3"
+    crs:Texture="+4"
     crs:Clarity2012="+4"
-    crs:Vibrance="+6"
-    crs:Saturation="+0"
-    crs:Dehaze="+0"
+    crs:Vibrance="+9"
+    crs:Saturation="+1"
+    crs:Dehaze="+4"
     crs:HueAdjustmentAqua="+3"
-    crs:HueAdjustmentBlue="-2"
+    crs:HueAdjustmentBlue="-1"
     crs:HueAdjustmentGreen="+1"
-    crs:HueAdjustmentOrange="-5"
-    crs:HueAdjustmentPurple="-2"
-    crs:HueAdjustmentRed="+1"
-    crs:LuminanceAdjustmentAqua="-4"
-    crs:LuminanceAdjustmentBlue="+7"
-    crs:LuminanceAdjustmentGreen="-4"
+    crs:HueAdjustmentOrange="-4"
+    crs:HueAdjustmentPurple="-1"
+    crs:LuminanceAdjustmentAqua="-3"
+    crs:LuminanceAdjustmentBlue="+4"
+    crs:LuminanceAdjustmentGreen="-3"
     crs:LuminanceAdjustmentMagenta="-1"
-    crs:LuminanceAdjustmentOrange="-5"
-    crs:LuminanceAdjustmentPurple="+1"
+    crs:LuminanceAdjustmentOrange="-3"
     crs:LuminanceAdjustmentRed="-2"
-    crs:LuminanceAdjustmentYellow="-5"
-    crs:SaturationAdjustmentAqua="+4"
-    crs:SaturationAdjustmentBlue="-6"
-    crs:SaturationAdjustmentMagenta="+3"
-    crs:SaturationAdjustmentOrange="+1"
-    crs:SaturationAdjustmentPurple="-3"
-    crs:SaturationAdjustmentRed="-4"
-    crs:SaturationAdjustmentYellow="+2">
+    crs:LuminanceAdjustmentYellow="-4"
+    crs:SaturationAdjustmentAqua="+2"
+    crs:SaturationAdjustmentBlue="-5"
+    crs:SaturationAdjustmentGreen="+4"
+    crs:SaturationAdjustmentMagenta="+2"
+    crs:SaturationAdjustmentOrange="+3"
+    crs:SaturationAdjustmentPurple="-2"
+    crs:SaturationAdjustmentRed="-3"
+    crs:SaturationAdjustmentYellow="+1"
+    crs:SplitToningShadowHue="210"
+    crs:SplitToningShadowSaturation="3"
+    crs:SplitToningHighlightHue="35"
+    crs:SplitToningHighlightSaturation="3"
+    crs:SplitToningBalance="-5"
+    crs:VignetteAmount="-5"
+    crs:PostCropVignetteAmount="-7"
+    crs:PostCropVignetteMidpoint="50"
+    crs:PostCropVignetteFeather="55"
+    crs:GrainAmount="2"
+    crs:GrainSize="25">
    <crs:ToneCurvePV2012>
     <rdf:Seq>
      <rdf:li>0, 0</rdf:li>
@@ -63,14 +73,14 @@
      <rdf:li>6, 6</rdf:li>
      <rdf:li>11, 13</rdf:li>
      <rdf:li>20, 26</rdf:li>
-     <rdf:li>37, 52</rdf:li>
-     <rdf:li>62, 82</rdf:li>
-     <rdf:li>85, 102</rdf:li>
-     <rdf:li>122, 145</rdf:li>
-     <rdf:li>156, 189</rdf:li>
-     <rdf:li>191, 220</rdf:li>
-     <rdf:li>223, 243</rdf:li>
-     <rdf:li>236, 250</rdf:li>
+     <rdf:li>37, 51</rdf:li>
+     <rdf:li>62, 80</rdf:li>
+     <rdf:li>85, 101</rdf:li>
+     <rdf:li>122, 143</rdf:li>
+     <rdf:li>156, 186</rdf:li>
+     <rdf:li>191, 217</rdf:li>
+     <rdf:li>223, 241</rdf:li>
+     <rdf:li>236, 248</rdf:li>
      <rdf:li>255, 255</rdf:li>
     </rdf:Seq>
    </crs:ToneCurvePV2012Red>
@@ -80,30 +90,30 @@
      <rdf:li>6, 5</rdf:li>
      <rdf:li>11, 12</rdf:li>
      <rdf:li>20, 26</rdf:li>
-     <rdf:li>35, 48</rdf:li>
-     <rdf:li>54, 73</rdf:li>
-     <rdf:li>78, 98</rdf:li>
-     <rdf:li>103, 126</rdf:li>
-     <rdf:li>140, 170</rdf:li>
-     <rdf:li>177, 207</rdf:li>
-     <rdf:li>212, 234</rdf:li>
-     <rdf:li>229, 244</rdf:li>
+     <rdf:li>35, 47</rdf:li>
+     <rdf:li>54, 71</rdf:li>
+     <rdf:li>78, 96</rdf:li>
+     <rdf:li>103, 123</rdf:li>
+     <rdf:li>140, 167</rdf:li>
+     <rdf:li>177, 204</rdf:li>
+     <rdf:li>212, 232</rdf:li>
+     <rdf:li>229, 243</rdf:li>
      <rdf:li>255, 255</rdf:li>
     </rdf:Seq>
    </crs:ToneCurvePV2012Green>
    <crs:ToneCurvePV2012Blue>
     <rdf:Seq>
      <rdf:li>0, 0</rdf:li>
-     <rdf:li>7, 8</rdf:li>
+     <rdf:li>7, 7</rdf:li>
      <rdf:li>13, 17</rdf:li>
-     <rdf:li>24, 33</rdf:li>
-     <rdf:li>41, 53</rdf:li>
-     <rdf:li>65, 76</rdf:li>
-     <rdf:li>87, 101</rdf:li>
-     <rdf:li>121, 137</rdf:li>
-     <rdf:li>178, 202</rdf:li>
-     <rdf:li>213, 234</rdf:li>
-     <rdf:li>226, 246</rdf:li>
+     <rdf:li>24, 32</rdf:li>
+     <rdf:li>41, 52</rdf:li>
+     <rdf:li>65, 75</rdf:li>
+     <rdf:li>87, 100</rdf:li>
+     <rdf:li>121, 135</rdf:li>
+     <rdf:li>178, 199</rdf:li>
+     <rdf:li>213, 232</rdf:li>
+     <rdf:li>226, 244</rdf:li>
      <rdf:li>255, 255</rdf:li>
     </rdf:Seq>
    </crs:ToneCurvePV2012Blue>

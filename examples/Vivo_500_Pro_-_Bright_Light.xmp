@@ -18,40 +18,49 @@
     crs:WhiteBalance="As Shot"
     crs:ToneCurveName2012="Custom"
     crs:HasSettings="True"
-    crs:Copyright="Relative look vs average of folders"
-    crs:Exposure2012="-0.04"
+    crs:Copyright="Relative vivo_grok-biased"
+    crs:Exposure2012="+0.03"
     crs:Contrast2012="+9"
-    crs:Highlights2012="-20"
-    crs:Shadows2012="+5"
-    crs:Whites2012="+13"
-    crs:Blacks2012="-3"
-    crs:Texture="+2"
-    crs:Clarity2012="+3"
-    crs:Vibrance="+6"
-    crs:Saturation="+0"
-    crs:Dehaze="+0"
-    crs:HueAdjustmentAqua="+9"
-    crs:HueAdjustmentBlue="-3"
-    crs:HueAdjustmentGreen="+3"
-    crs:HueAdjustmentPurple="-4"
-    crs:HueAdjustmentRed="-1"
-    crs:HueAdjustmentYellow="-2"
-    crs:LuminanceAdjustmentAqua="-4"
-    crs:LuminanceAdjustmentBlue="+9"
-    crs:LuminanceAdjustmentGreen="-9"
-    crs:LuminanceAdjustmentMagenta="+4"
+    crs:Highlights2012="-21"
+    crs:Shadows2012="+18"
+    crs:Whites2012="+8"
+    crs:Blacks2012="-5"
+    crs:Texture="+4"
+    crs:Clarity2012="+4"
+    crs:Vibrance="+9"
+    crs:Saturation="+1"
+    crs:Dehaze="+4"
+    crs:HueAdjustmentAqua="+6"
+    crs:HueAdjustmentBlue="-2"
+    crs:HueAdjustmentGreen="+2"
+    crs:HueAdjustmentPurple="-3"
+    crs:HueAdjustmentYellow="-1"
+    crs:LuminanceAdjustmentAqua="-3"
+    crs:LuminanceAdjustmentBlue="+7"
+    crs:LuminanceAdjustmentGreen="-7"
+    crs:LuminanceAdjustmentMagenta="+3"
     crs:LuminanceAdjustmentOrange="-1"
-    crs:LuminanceAdjustmentPurple="+2"
+    crs:LuminanceAdjustmentPurple="+1"
     crs:LuminanceAdjustmentRed="+2"
-    crs:LuminanceAdjustmentYellow="-6"
-    crs:SaturationAdjustmentAqua="-2"
-    crs:SaturationAdjustmentBlue="-5"
-    crs:SaturationAdjustmentGreen="+3"
-    crs:SaturationAdjustmentMagenta="-3"
-    crs:SaturationAdjustmentOrange="-3"
-    crs:SaturationAdjustmentPurple="-2"
+    crs:LuminanceAdjustmentYellow="-4"
+    crs:SaturationAdjustmentAqua="-1"
+    crs:SaturationAdjustmentBlue="-4"
+    crs:SaturationAdjustmentGreen="+6"
+    crs:SaturationAdjustmentMagenta="-2"
+    crs:SaturationAdjustmentPurple="-1"
     crs:SaturationAdjustmentRed="+2"
-    crs:SaturationAdjustmentYellow="-2">
+    crs:SaturationAdjustmentYellow="-1"
+    crs:SplitToningShadowHue="210"
+    crs:SplitToningShadowSaturation="3"
+    crs:SplitToningHighlightHue="35"
+    crs:SplitToningHighlightSaturation="3"
+    crs:SplitToningBalance="-5"
+    crs:VignetteAmount="-5"
+    crs:PostCropVignetteAmount="-7"
+    crs:PostCropVignetteMidpoint="50"
+    crs:PostCropVignetteFeather="55"
+    crs:GrainAmount="2"
+    crs:GrainSize="25">
    <crs:ToneCurvePV2012>
     <rdf:Seq>
      <rdf:li>0, 0</rdf:li>
@@ -65,12 +74,12 @@
      <rdf:li>16, 12</rdf:li>
      <rdf:li>32, 33</rdf:li>
      <rdf:li>59, 64</rdf:li>
-     <rdf:li>94, 99</rdf:li>
+     <rdf:li>94, 98</rdf:li>
      <rdf:li>122, 121</rdf:li>
      <rdf:li>146, 146</rdf:li>
-     <rdf:li>180, 195</rdf:li>
-     <rdf:li>206, 223</rdf:li>
-     <rdf:li>232, 244</rdf:li>
+     <rdf:li>180, 193</rdf:li>
+     <rdf:li>206, 221</rdf:li>
+     <rdf:li>232, 243</rdf:li>
      <rdf:li>246, 250</rdf:li>
      <rdf:li>255, 255</rdf:li>
     </rdf:Seq>
@@ -85,9 +94,9 @@
      <rdf:li>81, 77</rdf:li>
      <rdf:li>109, 109</rdf:li>
      <rdf:li>136, 134</rdf:li>
-     <rdf:li>170, 187</rdf:li>
-     <rdf:li>197, 213</rdf:li>
-     <rdf:li>222, 237</rdf:li>
+     <rdf:li>170, 185</rdf:li>
+     <rdf:li>197, 211</rdf:li>
+     <rdf:li>222, 236</rdf:li>
      <rdf:li>242, 247</rdf:li>
      <rdf:li>255, 255</rdf:li>
     </rdf:Seq>
@@ -97,14 +106,14 @@
      <rdf:li>0, 0</rdf:li>
      <rdf:li>4, 3</rdf:li>
      <rdf:li>9, 8</rdf:li>
-     <rdf:li>20, 26</rdf:li>
+     <rdf:li>20, 25</rdf:li>
      <rdf:li>40, 43</rdf:li>
      <rdf:li>67, 63</rdf:li>
-     <rdf:li>93, 86</rdf:li>
-     <rdf:li>126, 109</rdf:li>
+     <rdf:li>93, 87</rdf:li>
+     <rdf:li>126, 111</rdf:li>
      <rdf:li>170, 170</rdf:li>
-     <rdf:li>201, 207</rdf:li>
-     <rdf:li>232, 240</rdf:li>
+     <rdf:li>201, 206</rdf:li>
+     <rdf:li>232, 239</rdf:li>
      <rdf:li>242, 246</rdf:li>
      <rdf:li>255, 255</rdf:li>
     </rdf:Seq>

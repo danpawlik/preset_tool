@@ -18,42 +18,52 @@
     crs:WhiteBalance="As Shot"
     crs:ToneCurveName2012="Custom"
     crs:HasSettings="True"
-    crs:Copyright="Relative look vs average of folders"
-    crs:Exposure2012="-0.04"
+    crs:Copyright="Relative vivo_grok-biased"
+    crs:Exposure2012="+0.03"
     crs:Contrast2012="+9"
-    crs:Highlights2012="-19"
-    crs:Shadows2012="+0"
-    crs:Whites2012="+8"
-    crs:Blacks2012="-2"
-    crs:Texture="+2"
-    crs:Clarity2012="+3"
-    crs:Vibrance="+6"
-    crs:Saturation="+0"
-    crs:Dehaze="+0"
-    crs:HueAdjustmentAqua="+6"
-    crs:HueAdjustmentBlue="-3"
-    crs:HueAdjustmentGreen="+1"
+    crs:Highlights2012="-20"
+    crs:Shadows2012="+16"
+    crs:Whites2012="+7"
+    crs:Blacks2012="-5"
+    crs:Texture="+4"
+    crs:Clarity2012="+4"
+    crs:Vibrance="+9"
+    crs:Saturation="+1"
+    crs:Dehaze="+4"
+    crs:HueAdjustmentAqua="+4"
+    crs:HueAdjustmentBlue="-1"
+    crs:HueAdjustmentGreen="+4"
     crs:HueAdjustmentMagenta="-4"
     crs:HueAdjustmentOrange="+1"
-    crs:HueAdjustmentPurple="-5"
+    crs:HueAdjustmentPurple="-3"
     crs:HueAdjustmentRed="-1"
-    crs:HueAdjustmentYellow="+4"
-    crs:LuminanceAdjustmentAqua="+6"
-    crs:LuminanceAdjustmentBlue="+5"
-    crs:LuminanceAdjustmentGreen="-12"
+    crs:HueAdjustmentYellow="+3"
+    crs:LuminanceAdjustmentAqua="+4"
+    crs:LuminanceAdjustmentBlue="+3"
+    crs:LuminanceAdjustmentGreen="-5"
     crs:LuminanceAdjustmentMagenta="+2"
-    crs:LuminanceAdjustmentOrange="-4"
-    crs:LuminanceAdjustmentPurple="+2"
+    crs:LuminanceAdjustmentOrange="-3"
+    crs:LuminanceAdjustmentPurple="+1"
     crs:LuminanceAdjustmentRed="+1"
-    crs:LuminanceAdjustmentYellow="-12"
+    crs:LuminanceAdjustmentYellow="-8"
     crs:SaturationAdjustmentAqua="+1"
-    crs:SaturationAdjustmentBlue="-5"
-    crs:SaturationAdjustmentGreen="+1"
-    crs:SaturationAdjustmentMagenta="+6"
-    crs:SaturationAdjustmentOrange="-3"
+    crs:SaturationAdjustmentBlue="-3"
+    crs:SaturationAdjustmentGreen="-2"
+    crs:SaturationAdjustmentMagenta="+5"
     crs:SaturationAdjustmentPurple="+3"
-    crs:SaturationAdjustmentRed="-5"
-    crs:SaturationAdjustmentYellow="+4">
+    crs:SaturationAdjustmentRed="-4"
+    crs:SaturationAdjustmentYellow="+2"
+    crs:SplitToningShadowHue="210"
+    crs:SplitToningShadowSaturation="3"
+    crs:SplitToningHighlightHue="35"
+    crs:SplitToningHighlightSaturation="3"
+    crs:SplitToningBalance="-5"
+    crs:VignetteAmount="-5"
+    crs:PostCropVignetteAmount="-7"
+    crs:PostCropVignetteMidpoint="50"
+    crs:PostCropVignetteFeather="55"
+    crs:GrainAmount="2"
+    crs:GrainSize="25">
    <crs:ToneCurvePV2012>
     <rdf:Seq>
      <rdf:li>0, 0</rdf:li>
@@ -66,13 +76,13 @@
      <rdf:li>8, 6</rdf:li>
      <rdf:li>16, 14</rdf:li>
      <rdf:li>32, 34</rdf:li>
-     <rdf:li>59, 66</rdf:li>
-     <rdf:li>94, 102</rdf:li>
-     <rdf:li>122, 133</rdf:li>
-     <rdf:li>146, 160</rdf:li>
-     <rdf:li>180, 200</rdf:li>
-     <rdf:li>206, 228</rdf:li>
-     <rdf:li>232, 243</rdf:li>
+     <rdf:li>59, 65</rdf:li>
+     <rdf:li>94, 101</rdf:li>
+     <rdf:li>122, 132</rdf:li>
+     <rdf:li>146, 159</rdf:li>
+     <rdf:li>180, 198</rdf:li>
+     <rdf:li>206, 226</rdf:li>
+     <rdf:li>232, 242</rdf:li>
      <rdf:li>246, 249</rdf:li>
      <rdf:li>255, 255</rdf:li>
     </rdf:Seq>
@@ -83,13 +93,13 @@
      <rdf:li>7, 3</rdf:li>
      <rdf:li>13, 11</rdf:li>
      <rdf:li>25, 24</rdf:li>
-     <rdf:li>54, 49</rdf:li>
+     <rdf:li>54, 50</rdf:li>
      <rdf:li>81, 78</rdf:li>
-     <rdf:li>109, 104</rdf:li>
+     <rdf:li>109, 105</rdf:li>
      <rdf:li>136, 140</rdf:li>
-     <rdf:li>170, 178</rdf:li>
-     <rdf:li>197, 212</rdf:li>
-     <rdf:li>222, 232</rdf:li>
+     <rdf:li>170, 177</rdf:li>
+     <rdf:li>197, 210</rdf:li>
+     <rdf:li>222, 231</rdf:li>
      <rdf:li>242, 244</rdf:li>
      <rdf:li>255, 255</rdf:li>
     </rdf:Seq>
@@ -101,10 +111,10 @@
      <rdf:li>9, 7</rdf:li>
      <rdf:li>20, 19</rdf:li>
      <rdf:li>40, 35</rdf:li>
-     <rdf:li>67, 57</rdf:li>
-     <rdf:li>93, 79</rdf:li>
-     <rdf:li>126, 117</rdf:li>
-     <rdf:li>170, 165</rdf:li>
+     <rdf:li>67, 58</rdf:li>
+     <rdf:li>93, 80</rdf:li>
+     <rdf:li>126, 118</rdf:li>
+     <rdf:li>170, 166</rdf:li>
      <rdf:li>201, 201</rdf:li>
      <rdf:li>232, 233</rdf:li>
      <rdf:li>242, 245</rdf:li>
