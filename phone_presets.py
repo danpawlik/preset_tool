@@ -1,21 +1,28 @@
 #!/usr/bin/env python3
-"""Derive per-brand Lightroom presets from sample folders.
+"""Derive Lightroom presets per phone and per brand from sample folders.
 
   phone_presets.py SAMPLES_DIR OUT_DIR
 
-Brand look = median render of the brand's photos vs the average of all phones.
+Per phone, 2 presets: photos are split into bright and dim scenes (by median
+luminance, split at the median of all photos). Each preset = that phone's median
+render in that light vs the average of all phones in the same light.
+Per brand, 1 preset: the brand's overall median render vs the average of all phones.
 Photos far from their phone's typical render are ignored.
 
-Per-model presets (X300 vs X500, 17 vs 18) were tried and dropped: on held-out
-same-scene pairs the model difference predicted the other phone no better than
-chance (vivo 10/19 scenes, xiaomi 3/6), i.e. it is scene noise, not a look.
+Note: on held-out same-scene pairs the X300-vs-X500 and 17-vs-18 differences
+predicted the other phone no better than chance (vivo 10/19, xiaomi 3/6), so
+same-brand phone presets come out similar; the brand split is the robust part.
 """
 import glob, os, sys
+import warnings
 import numpy as np
+warnings.filterwarnings('ignore', 'All-NaN')  # colour absent in a small set; hsl_from skips it
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from make_preset import BANDS, load, band_stats, channel_curves, apply_curves, xmp, rgb_to_hsv, Q
 
-PHONES = ['vivo_300_pro', 'vivo_500_pro', 'xiaomi_17', 'xiaomi_18']
+PHONES = {'vivo_300_pro': 'Vivo X300 Pro', 'vivo_500_pro': 'Vivo X500 Pro',
+          'xiaomi_17': 'Xiaomi 17', 'xiaomi_18': 'Xiaomi 18'}
+LIGHTS = ['Bright Light', 'Low Light']
 BRANDS = {'Vivo': ['vivo_300_pro', 'vivo_500_pro'], 'Xiaomi': ['xiaomi_17', 'xiaomi_18']}
 EXCLUDE = {'262830-329.jpg',       # EXIF says X300 Pro, sits in the X500 folder
            'HUOVrgla4AAowpt.jpg'}  # watermark: vivo X300 Ultra
@@ -80,7 +87,7 @@ def describe(name, d):
     parts = [f'shadows {lum[1]:+.0f}', f'mids {lum[5]:+.0f}', f'highlights {lum[9]:+.0f}',
              f'warmth (R-B mids) {q[5, 0] - q[5, 2]:+.0f}', f'tint (G mids) {q[5, 1] - (q[5, 0] + q[5, 2]) / 2:+.0f}']
     top = [f'{n} {s * 100:+.0f}%' for n, s in zip(BANDS, sat) if not np.isnan(s) and abs(s) >= 0.02]
-    print(f'  {name:14s} ' + ', '.join(parts) + ' | saturation: ' + (', '.join(top) or 'same'))
+    print(f'  {name:28s} ' + ', '.join(parts) + ' | saturation: ' + (', '.join(top) or 'same'))
 
 
 def main(src, out):
@@ -90,31 +97,44 @@ def main(src, out):
         files = [f for f in sorted(glob.glob(os.path.join(src, d, '*.jpg'))) if os.path.basename(f) not in EXCLUDE]
         pix[d] = {os.path.basename(f): load(f) for f in files}
         feats[d] = {k: features(v) for k, v in pix[d].items()}
-        print(f'{d}: {len(files)} photos')
 
-    print('\nOutlier check (per phone):')
-    prof = {d: np.nanmedian(robust_keep(np.array(list(feats[d].values())), list(feats[d]), d), 0) for d in PHONES}
-    base = np.nanmean([prof[d] for d in PHONES], 0)  # "average phone" render
+    def mid(f): return f[:33].reshape(11, 3)[5].mean()
+    split = np.median([mid(f) for d in PHONES for f in feats[d].values()])
+    light = {d: {k: LIGHTS[int(mid(f) < split)] for k, f in feats[d].items()} for d in PHONES}
+    print(f'Bright/low light split at median luminance {split:.0f}/255')
 
-    target = {f'{b} Look': np.mean([prof[d] for d in ds], 0) for b, ds in BRANDS.items()}
+    def profile(d, keep, label):
+        names = [k for k in feats[d] if keep(k)]
+        if len(names) < 3:
+            sys.exit(f'{label}: only {len(names)} photos, need 3')
+        print(f'  {label}: {len(names)} photos')
+        return np.nanmedian(robust_keep(np.array([feats[d][k] for k in names]), names, label), 0)
 
-    # average-phone sample used to measure what the curves do to saturation/hue on their own
+    jobs = []  # (preset name, target profile, baseline profile, sample photos for HSL correction)
+    for lt in LIGHTS:
+        prof = {d: profile(d, lambda k, d=d: light[d][k] == lt, f'{PHONES[d]} / {lt}') for d in PHONES}
+        base = np.nanmean(list(prof.values()), 0)
+        sample = [pix[d][k] for d in PHONES for k in pix[d] if light[d][k] == lt][::2]
+        jobs += [(f'{PHONES[d]} - {lt}', prof[d], base, sample) for d in PHONES]
+    prof = {d: profile(d, lambda k: True, f'{PHONES[d]} / all') for d in PHONES}
+    base = np.nanmean(list(prof.values()), 0)
     sample = [px for d in PHONES for px in list(pix[d].values())[::4]]
-    base_q = base[:33].reshape(11, 3)
-    print('\nSummary vs the average of all four phones (tone in 0-255 levels):')
-    for name, t in target.items():
-        describe(name, t - base)
+    jobs += [(f'{b} Look', np.mean([prof[d] for d in ds], 0), base, sample) for b, ds in BRANDS.items()]
+
+    print('\nSummary vs the average of all four phones in the same light (tone in 0-255 levels):')
+    for name, t, b, _ in jobs:
+        describe(name, t - b)
     print()
 
     previews = {}
-    before = np.nanmedian([features(px)[33:] for px in sample], 0)
-    for name, t in target.items():
-        curves = channel_curves(t[:33].reshape(11, 3), base_q, 1.0)
+    for name, t, b, sample in jobs:
+        curves = channel_curves(t[:33].reshape(11, 3), b[:33].reshape(11, 3), 1.0)
+        before = np.nanmedian([features(px)[33:] for px in sample], 0)
         after = np.nanmedian([features(apply_curves(px, curves))[33:] for px in sample], 0)
-        hsl = hsl_from(t[33:].reshape(NB, 3), base[33:].reshape(NB, 3), (after - before).reshape(NB, 3))
+        hsl = hsl_from(t[33:].reshape(NB, 3), b[33:].reshape(NB, 3), (after - before).reshape(NB, 3))
         path = os.path.join(out, name.replace(' ', '_') + '.xmp')
         with open(path, 'w') as f:
-            f.write(xmp(name, curves, hsl, 'Median brand render vs the average of the sampled phones; outlier photos ignored.')
+            f.write(xmp(name, curves, hsl, 'Median phone render vs the average of the sampled phones; outlier photos ignored.')
                     .replace('Generated Looks', 'Phone Looks'))
         previews[name] = (curves, hsl)
         print('wrote', path)

@@ -63,22 +63,38 @@ python3 phone_presets.py SAMPLES_DIR OUT_DIR
 ```
 
 Expects `SAMPLES_DIR` to contain `vivo_300_pro/`, `vivo_500_pro/`, `xiaomi_17/`,
-`xiaomi_18/`. Writes `Vivo_Look.xmp` and `Xiaomi_Look.xmp`.
+`xiaomi_18/`. Writes 10 presets:
 
-Each brand look = median render of the brand's photos vs. the average of all four
-phones. Photos far from their phone's typical render are ignored, and known
-wrong-phone files are excluded (`EXCLUDE` in the script).
+- 2 per phone: `<Phone>_-_Bright_Light.xmp` and `<Phone>_-_Low_Light.xmp`
+- 1 per brand: `Vivo_Look.xmp`, `Xiaomi_Look.xmp`
 
-Current result from the sample set:
+Photos are split into bright and dim scenes by median luminance (split at the
+median of all photos, ~80/255). Each phone preset = that phone's median render in
+that light vs. the average of all four phones in the same light, so bright scenes
+are compared with bright scenes. Brand presets use all photos. Photos far from their
+phone's typical render are ignored, and known wrong-phone files are excluded
+(`EXCLUDE` in the script).
 
-| | Shadows | Mids | Highlights | Colour |
-|---|---|---|---|---|
-| Vivo | same | +10 | +13 | slightly warm, yellows +6%, reds -4% |
-| Xiaomi | same | -10 | -13 | slightly cool, reds +4%, yellows -6% |
+Current result from the sample set (vs. the average phone, 0-255 levels):
 
-Why only one preset per brand: on same-scene pairs, the X300-vs-X500 and
-17-vs-18 differences predicted the held-out phone no better than chance
-(vivo 10/19 scenes, xiaomi 3/6), so per-model presets would be noise.
+| Preset | Photos | Mids | Highlights | Warmth | Notes |
+|---|---|---|---|---|---|
+| Vivo X300 Pro - Bright Light | 20 | -8 | +9 | +6 | yellow/green +5-7% |
+| Vivo X300 Pro - Low Light | 6 | +5 | +4 | +7 | yellow +10%; few photos, low confidence |
+| Vivo X500 Pro - Bright Light | 19 | +1 | +10 | +8 | aqua +4% |
+| Vivo X500 Pro - Low Light | 11 | +10 | +10 | +1 | brighter, neutral |
+| Xiaomi 17 - Bright Light | 21 | +7 | -5 | -7 | reds/blues +5%, greens -7% |
+| Xiaomi 17 - Low Light | 37 | -11 | -4 | -18 | cool and dark, yellow -11% |
+| Xiaomi 18 - Bright Light | 15 | +1 | -14 | -7 | yellow -9% |
+| Xiaomi 18 - Low Light | 19 | -4 | -9 | +9 | reds +5% |
+| Vivo Look | 56 | +10 | +13 | +5 | |
+| Xiaomi Look | 92 | -10 | -13 | -5 | |
+
+Confidence: the brand split (Vivo brighter than Xiaomi) holds under resampling.
+The difference between phones of the same brand does not: on same-scene pairs,
+X300-vs-X500 and 17-vs-18 predicted the held-out phone no better than chance
+(vivo 10/19 scenes, xiaomi 3/6). Per-phone presets are each phone's own average
+render, so they're usable, but treat small same-brand differences as noise.
 
 ## Installing presets in Lightroom
 
