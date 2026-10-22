@@ -90,13 +90,15 @@ def character_offsets(char, ref, gain=0.5):
     g = gain
     spread = (char['high'] - char['shad']) - (ref['high'] - ref['shad'])
     basic = {
-        'Exposure2012': (char['mid_bright'] - ref['mid_bright']) / 128 * 1.5 * g,
-        'Shadows2012': (char['shad'] - ref['shad']) * 1.0 * g,
-        'Highlights2012': (char['high'] - ref['high']) * 1.0 * g,
-        'Contrast2012': spread * 0.5 * g,
-        'Vibrance': (char['mean_sat'] / ref['mean_sat'] - 1) * 100 * 0.5 * g,
+        'Exposure2012': (char['mid_bright'] - ref['mid_bright']) / 128 * 2.0 * g,
+        'Shadows2012': (char['shad'] - ref['shad']) * 1.4 * g,
+        'Highlights2012': (char['high'] - ref['high']) * 1.4 * g,
+        'Contrast2012': spread * 0.8 * g,
+        'Vibrance': (char['mean_sat'] / max(ref['mean_sat'], 1e-6) - 1) * 100 * 0.8 * g,
+        'Clarity2012': spread * 0.15 * g,
+        'Texture': spread * 0.10 * g,
     }
-    hsl = {f'SaturationAdjustment{b}': (v / ref['bands'][b] - 1) * 100 * 0.5 * g
+    hsl = {f'SaturationAdjustment{b}': (v / max(ref['bands'][b], 1e-6) - 1) * 100 * 0.8 * g
            for b, v in char['bands'].items() if ref['bands'].get(b)}
     dw = (char['warmth'] - ref['warmth']) * g  # R-B in mids, levels
     extra = {'ColorGradeMidtoneHue': '40' if dw > 0 else '220',
@@ -115,25 +117,25 @@ def mean_character(chars):
 def absolute_basic_sliders(char, strength=1.0, offsets=None):
     """BASE plus this folder's offsets from the average folder (see character_offsets)."""
     s = strength
-    # With few photos, trust BASE even more
-    w = 0.12 if char['n'] < 6 else 0.22
+    # Measured character weight (was 0.12/0.22 — too little, presets looked identical)
+    w = 0.40 if char['n'] < 6 else 0.55
     off = dict(offsets or {})
 
     def n(key, delta, lo, hi):
         return float(np.clip((BASE[key] + delta * w) * s + off.get(key, 0), lo, hi))
 
     return {
-        'Exposure2012': round(n('Exposure2012', char['mid_bright'] / 120.0, -0.15, 0.25), 2),
-        'Contrast2012': int(round(n('Contrast2012', 0, 8, 22))),
-        'Highlights2012': int(round(n('Highlights2012', -char['highlight_rolloff'] * 0.1, -45, -15))),
-        'Shadows2012': int(round(n('Shadows2012', char['shadow_lift'] * 0.1, 20, 45))),
-        'Whites2012': int(round(n('Whites2012', 0, 0, 16))),
-        'Blacks2012': int(round(n('Blacks2012', 0, -16, 0))),
-        'Texture': int(round(n('Texture', 0, 3, 12))),
-        'Clarity2012': int(round(n('Clarity2012', 0, 3, 14))),
-        'Vibrance': int(round(n('Vibrance', 0, 6, 16))),
+        'Exposure2012': round(n('Exposure2012', char['mid_bright'] / 120.0, -0.35, 0.40), 2),
+        'Contrast2012': int(round(n('Contrast2012', 0, 0, 35))),
+        'Highlights2012': int(round(n('Highlights2012', -char['highlight_rolloff'] * 0.1, -55, 5))),
+        'Shadows2012': int(round(n('Shadows2012', char['shadow_lift'] * 0.1, 5, 55))),
+        'Whites2012': int(round(n('Whites2012', 0, -15, 25))),
+        'Blacks2012': int(round(n('Blacks2012', 0, -25, 10))),
+        'Texture': int(round(n('Texture', 0, -5, 20))),
+        'Clarity2012': int(round(n('Clarity2012', 0, -5, 22))),
+        'Vibrance': int(round(n('Vibrance', 0, 0, 25))),
         'Saturation': int(round(BASE['Saturation'] * s)),
-        'Dehaze': int(round(n('Dehaze', 0, 2, 8))),
+        'Dehaze': int(round(n('Dehaze', 0, 0, 12))),
     }
 
 
@@ -300,7 +302,7 @@ def run_relative(pix, feats, strength, out, groups, min_photos, by_light):
 
 
 def main(src, out, exclude=(), groups=True, min_photos=3, strength=1.0,
-         absolute=False, by_light=False, character=0.5):
+         absolute=False, by_light=False, character=1.0):
     os.makedirs(out, exist_ok=True)
     pix = scan(src, set(exclude), min_photos)
     print('Folders:', ', '.join(f'{d} ({len(v)})' for d, v in pix.items()))
@@ -368,9 +370,9 @@ if __name__ == '__main__':
                     help='One character-based preset per folder (recommended)')
     ap.add_argument('--by-light', action='store_true',
                     help='Also generate Bright/Low Light relative variants')
-    ap.add_argument('--character', type=float, default=0.5,
+    ap.add_argument('--character', type=float, default=1.0,
                     help='--absolute: how strongly each folder differs from the others '
-                         '(0 = same BASE preset for all, default 0.5)')
+                         '(0 = same BASE preset for all, default 1.0)')
     ap.add_argument('--selftest', action='store_true')
     a = ap.parse_args()
     main(a.samples_dir, a.out_dir, a.exclude, not a.no_groups,

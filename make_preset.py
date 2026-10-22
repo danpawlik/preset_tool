@@ -227,6 +227,14 @@ def xmp(name, curves, hsl, basic, desc, group='Generated Looks', extra_attrs=Non
     ]
     # Detail + effects (close to vivo_grok); basic/hsl/extra_attrs below override these
     attrs += [
+        # Same as Vivo_X500_ZEISS_Look hand-tuned preset
+        ('ParametricShadows', '5'),
+        ('ParametricDarks', '0'),
+        ('ParametricLights', '-5'),
+        ('ParametricHighlights', '-5'),
+        ('ParametricShadowSplit', '25'),
+        ('ParametricMidtoneSplit', '50'),
+        ('ParametricHighlightSplit', '75'),
         ('Sharpness', '32'),
         ('SharpenRadius', '0.9'),
         ('SharpenDetail', '18'),
