@@ -26,8 +26,8 @@ pip install --user numpy pillow
 Put sample JPEGs into folders (one look per folder), then:
 
 ```bash
-# One solid preset per folder (character-based, vivo_grok-style bias)
-python3 folder_presets.py ./samples ./presets --absolute -s 0.9
+# One solid preset per folder (character-based)
+python3 folder_presets.py ./samples ./presets --absolute -s 0.95
 ```
 
 Import the `.xmp` files in Lightroom: **Develop → Presets → + → Import Presets**.
@@ -46,8 +46,8 @@ python3 make_preset.py STYLE_DIR REFERENCE_DIR -n "My Look" [-o out.xmp] [-s STR
 
 | Argument | Meaning |
 |----------|---------|
-| `STYLE_DIR` | Photos with the look you want (min. 3) |
-| `REFERENCE_DIR` | Photos from the camera you’ll apply the preset to (min. 3) |
+| `STYLE_DIR` | Photos with the look you want (min. 1 — a single original + preset-applied pair is enough) |
+| `REFERENCE_DIR` | Photos from the camera you’ll apply the preset to (min. 1) |
 | `-n, --name` | Preset name in Lightroom |
 | `-o, --out` | Output file (default: `<name>.xmp`) |
 | `-s, --strength` | Scale all adjustments (`0.7` softer, `1.2` stronger; default `1.0`) |
@@ -72,7 +72,7 @@ What it writes:
 - Basic tone (Exposure, Contrast, Highlights, Shadows, Whites, Blacks, Texture, Clarity, Vibrance, Dehaze) with a photographic base inspired by hand-tuned phone looks
 - Soft HSL (±12)
 - RGB tone curves
-- Mild split toning, vignette and grain
+- Mild sharpening / noise reduction, split toning, vignette and grain
 
 ---
 
@@ -83,6 +83,8 @@ Generate presets for every sub-folder under a samples directory.
 ```bash
 python3 folder_presets.py SAMPLES_DIR OUT_DIR [options]
 ```
+
+Presets are written flat into `OUT_DIR` (relative-mode files carry a `(Folder_Looks)` suffix).
 
 ### Modes
 
@@ -99,9 +101,9 @@ python3 folder_presets.py SAMPLES_DIR OUT_DIR [options]
 | `--absolute` | Character-based absolute look per folder (**recommended**) |
 | `--by-light` | Also create Bright / Low Light relative presets |
 | `--no-groups` | Skip combined presets for name prefixes (`vivo_300` + `vivo_500` → `Vivo`) |
-| `--min-photos N` | Minimum photos per folder (default 3) |
+| `--min-photos N` | Minimum photos per folder (default 1) |
 | `-s, --strength` | Scale adjustments (default `1.0`) |
-| `--character G` | `--absolute`: how strongly each folder differs from the others (`0` = identical BASE preset for every folder, default `0.5`, `1.0` = strong, often hits slider limits) |
+| `--character G` | `--absolute`: how strongly each folder differs from the others (`0` = identical base preset for every folder, default `1.0`) |
 | `--exclude NAME ...` | Ignore folders or filenames |
 | `--selftest` | Run checks and exit |
 
@@ -124,16 +126,17 @@ python3 folder_presets.py ./samples ./presets --absolute -s 0.9 \
 
 ### How absolute mode works
 
-1. Measures character of the folder (shadow lift, highlight rolloff, warmth, saturation, mid brightness).
-2. Starts from a photographic base (stronger shadows, controlled highlights, mild clarity/vibrance — similar to hand-tuned phone presets).
-3. Adds this folder's difference from the **average of all folders** (`--character` scales it):
-   brightness → Exposure, shadow / highlight levels → Shadows / Highlights, tonal spread → Contrast,
-   saturation → Vibrance and per-band HSL saturation, warmth → Color Grading midtone (warm 40° / cool 220°).
-   With a single folder there is nothing to compare, so you get the plain base.
-4. Adds soft HSL, a gentle S-curve, light split toning, vignette and grain.
+1. Measures the character of the folder (mid brightness, shadow / highlight levels, tonal spread, saturation).
+2. Starts from a photographic base (Test_Pictures reference look: controlled shadows and highlights, mild contrast).
+3. The set's absolute brightness shifts Exposure (a dark sample set gets a lower exposure);
+   each folder's difference from the **average of all folders** adds small offsets that
+   `--character` scales. With a single folder you still get the brightness correction.
+4. Adds reference HSL plus per-folder saturation offsets (±5), a gentle S-curve per RGB channel,
+   mild midtone color grading for the set's warmth, light split toning, vignette and grain —
+   no sharpening or noise reduction block, so your camera defaults stay untouched.
 
 It does **not** compare to a linear “neutral” (that used to reverse JPEG processing and looked bad).
-Because the differences are measured against the other folders, adding or removing a folder changes the presets.
+Because the folder differences are measured against the other folders, adding or removing a folder changes the offsets.
 
 ### How relative mode works
 

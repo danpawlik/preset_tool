@@ -5,6 +5,8 @@ Tuned toward hand-crafted phone looks (vivo_grok style).
 
 Usage:
   python3 make_preset.py STYLE_DIR REFERENCE_DIR -n "My Look" [-o out.xmp] [-s STRENGTH] [--preview]
+
+One image per directory is enough (original + preset-applied pair); more = smoother.
 """
 import argparse, glob, os, sys, uuid
 import numpy as np
@@ -69,8 +71,8 @@ def load_dir(d):
             imgs.append(load(f))
         except Exception as e:
             print(f'skip {f}: {e}', file=sys.stderr)
-    if len(imgs) < 3:
-        sys.exit(f'{d}: need at least 3 readable images, got {len(imgs)}')
+    if not imgs:
+        sys.exit(f'{d}: need at least 1 readable image, got 0')
     return imgs
 
 
@@ -160,7 +162,7 @@ def hsl_sliders(style_imgs, ref_imgs, curves, strength):
     for b in BANDS:
         s = [x[b] for x in st if b in x]
         r = [x[b] for x in rf if b in x]
-        if len(s) < 3 or len(r) < 3:
+        if not s or not r:
             continue
         (s_sat, s_hue, s_lum), (r_sat, r_hue, r_lum) = np.mean(s, 0), np.mean(r, 0)
         out[f'SaturationAdjustment{b}'] = (s_sat / max(r_sat, 1e-6) - 1) * 30
@@ -204,7 +206,31 @@ def curve_xml(pts):
     return '\n'.join(lines)
 
 
-def xmp(name, curves, hsl, basic, desc, group='Generated Looks', extra_attrs=None):
+# Detail + effects (close to vivo_grok); basic/hsl/extra_attrs override these
+EFFECTS = [
+    ('Sharpness', '32'),
+    ('SharpenRadius', '0.9'),
+    ('SharpenDetail', '18'),
+    ('SharpenEdgeMasking', '15'),
+    ('LuminanceSmoothing', '8'),
+    ('ColorNoiseReduction', '22'),
+    ('SplitToningShadowHue', '210'),
+    ('SplitToningShadowSaturation', '3'),
+    ('SplitToningHighlightHue', '35'),
+    ('SplitToningHighlightSaturation', '4'),
+    ('SplitToningBalance', '-5'),
+    ('ColorGradeMidtoneHue', '20'),
+    ('ColorGradeMidtoneSat', '3'),
+    ('VignetteAmount', '-6'),
+    ('PostCropVignetteAmount', '-8'),
+    ('PostCropVignetteMidpoint', '50'),
+    ('PostCropVignetteFeather', '55'),
+    ('GrainAmount', '3'),
+    ('GrainSize', '25'),
+]
+
+
+def xmp(name, curves, hsl, basic, desc, extra_attrs=None, effects=None):
     """curves: either list of 3 RGB curves, or a single luminance curve (list of points)."""
     uid = uuid.uuid5(uuid.NAMESPACE_URL, name).hex.upper()
     attrs = [
@@ -225,28 +251,8 @@ def xmp(name, curves, hsl, basic, desc, group='Generated Looks', extra_attrs=Non
         ('HasSettings', 'True'),
         ('Copyright', desc[:80]),
     ]
-    # Detail + effects (close to vivo_grok); basic/hsl/extra_attrs below override these
-    attrs += [
-        ('Sharpness', '32'),
-        ('SharpenRadius', '0.9'),
-        ('SharpenDetail', '18'),
-        ('SharpenEdgeMasking', '15'),
-        ('LuminanceSmoothing', '8'),
-        ('ColorNoiseReduction', '22'),
-        ('SplitToningShadowHue', '210'),
-        ('SplitToningShadowSaturation', '3'),
-        ('SplitToningHighlightHue', '35'),
-        ('SplitToningHighlightSaturation', '4'),
-        ('SplitToningBalance', '-5'),
-        ('ColorGradeMidtoneHue', '20'),
-        ('ColorGradeMidtoneSat', '3'),
-        ('VignetteAmount', '-6'),
-        ('PostCropVignetteAmount', '-8'),
-        ('PostCropVignetteMidpoint', '50'),
-        ('PostCropVignetteFeather', '55'),
-        ('GrainAmount', '3'),
-        ('GrainSize', '25'),
-    ]
+    # Detail + effects (vivo_grok by default); basic/hsl/extra_attrs below override these
+    attrs += list(EFFECTS if effects is None else effects)
     attrs += [(k, fmt_val(v)) for k, v in basic.items()]
     attrs += [(k, fmt_val(v)) for k, v in sorted(hsl.items()) if v != 0]
     if extra_attrs:
